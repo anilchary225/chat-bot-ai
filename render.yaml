@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: vac-ai-chat-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DATABASE
+        value: vac_ai_chat
+      - key: OLLAMA_MODEL
+        value: qwen3.5:0.8b
+      - key: FRONTEND_ORIGIN
+        value: https://chat-bot-ai-anil-charys-projects.vercel.app
