@@ -3,7 +3,7 @@
 A standalone, text-only AI chatbot using:
 - React + Vite + Tailwind CSS frontend
 - FastAPI backend
-- Ollama with `qwen3.5:0.8b`
+- OpenRouter `openrouter/free` model routing for hosted inference
 - MongoDB Atlas for conversation persistence
 
 Phase 1 runs locally. It includes chat sessions, conversation history, streaming responses, and a dark interface. No voice, image, or document features.
@@ -11,30 +11,18 @@ Phase 1 runs locally. It includes chat sessions, conversation history, streaming
 ## Prerequisites
 - Python 3.11+
 - Node.js 20+
-- Ollama installed
+- OpenRouter API key (free account)
 - MongoDB Atlas account (or local MongoDB)
 
-## 1. Download and run the model
-
-```bash
-ollama pull qwen3.5:0.8b
-ollama serve
-```
-
-In another terminal, verify:
-
-```bash
-ollama run qwen3.5:0.8b
-```
-
-## 2. Configure MongoDB
+## 1. Configure OpenRouter and MongoDB
 
 Create a MongoDB Atlas cluster, create a database user, and allow your development IP in Network Access.
 
-Copy `.env.example` to `backend/.env` and set `MONGODB_URI`.
+Copy `.env.example` to `backend/.env` and set `MONGODB_URI` and `OPENROUTER_API_KEY`.
+The backend uses OpenRouter's `openrouter/free` router, which selects a free model.
 Do not commit `backend/.env`.
 
-## 3. Start backend
+## 2. Start backend
 
 ```bash
 cd backend
@@ -48,7 +36,7 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 API docs: http://127.0.0.1:8000/docs
 
-## 4. Start frontend
+## 3. Start frontend
 
 ```bash
 cd frontend
@@ -71,7 +59,6 @@ Open the Vite URL, normally http://localhost:5173.
   - `{"type":"error","message":"..."}`
 
 ## Notes
-- Ollama must be running and reachable from the backend.
-- The 0.8B model is a lightweight starting point; answer quality is limited compared with larger models.
+- OpenRouter free models have provider availability and usage limits; the free account currently allows up to 50 requests per day.
 - This is a development MVP, not a public multi-user production deployment. Before exposing it publicly, add authentication, per-user data isolation, rate limiting, HTTPS, request limits, and secure secret management.
-- A free frontend host does not provide free, always-on model inference. For a free demo, keep inference on your Mac and use a secure tunnel only when needed; your Mac must remain awake and online.
+- A free frontend host does not provide free, always-on model inference. OpenRouter supplies hosted inference within its free model and rate limits.

@@ -11,7 +11,7 @@ import logging
 from .config import settings
 from .db import connect_db, close_db, get_db
 from .schemas import CreateChatRequest, SendMessageRequest
-from .ollama import stream_chat
+from .openrouter import stream_chat
 
 SYSTEM_PROMPT = (
     "You are Zenoxi, a helpful general-purpose text assistant. "
@@ -77,8 +77,8 @@ async def health():
     return {
         "status": "ok" if db_ok else "degraded",
         "database": "connected" if db_ok else "unavailable",
-        "model": settings.ollama_model,
-        "inference": settings.ollama_base_url
+        "model": settings.openrouter_model,
+        "inference": settings.openrouter_base_url
     }
 
 @app.get("/api/chats")
@@ -170,26 +170,26 @@ async def send_message(chat_id: str, payload: SendMessageRequest):
             }) + "\n"
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
-            logger.exception("Ollama Cloud returned HTTP %s", status)
+            logger.exception("OpenRouter returned HTTP %s", status)
             if status in (401, 403):
-                message = "Ollama Cloud rejected the API key. Check OLLAMA_API_KEY in Render."
+                message = "OpenRouter rejected the API key. Check OPENROUTER_API_KEY in Render."
             elif status == 404:
-                message = "Ollama Cloud couldn't find the model. Check OLLAMA_MODEL in Render."
+                message = "OpenRouter couldn't find a free model. Try again later."
             elif status == 429:
-                message = "Ollama Cloud usage limit reached. Check your Ollama account usage."
+                message = "OpenRouter's free usage limit was reached. Try again after the limit resets."
             elif status >= 500:
-                message = "Ollama Cloud is temporarily unavailable. Try again shortly."
+                message = "OpenRouter is temporarily unavailable. Try again shortly."
             else:
-                message = f"Ollama Cloud returned an error (HTTP {status}). Check the Render logs."
+                message = f"OpenRouter returned an error (HTTP {status}). Check the Render logs."
             yield json.dumps({"type": "error", "message": message}) + "\n"
         except httpx.RequestError:
-            logger.exception("Could not connect to Ollama Cloud")
+            logger.exception("Could not connect to OpenRouter")
             yield json.dumps({
                 "type": "error",
-                "message": "Couldn't connect to Ollama Cloud. Check OLLAMA_BASE_URL in Render."
+                "message": "Couldn't connect to OpenRouter. Check OPENROUTER_BASE_URL in Render."
             }) + "\n"
         except Exception:
-            logger.exception("Unexpected error while streaming an Ollama response")
+            logger.exception("Unexpected error while streaming an OpenRouter response")
             yield json.dumps({
                 "type": "error",
                 "message": "Zenoxi couldn't get a reply. Check the Render logs for the model request error."

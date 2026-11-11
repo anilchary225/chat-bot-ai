@@ -12,11 +12,11 @@ services:
         sync: false
       - key: MONGODB_DATABASE
         value: vac_ai_chat
-      - key: OLLAMA_BASE_URL
-        value: https://ollama.com
-      - key: OLLAMA_MODEL
-        value: gemma4:31b
-      - key: OLLAMA_API_KEY
+      - key: OPENROUTER_BASE_URL
+        value: https://openrouter.ai/api/v1
+      - key: OPENROUTER_MODEL
+        value: openrouter/free
+      - key: OPENROUTER_API_KEY
         sync: false
       - key: FRONTEND_ORIGIN
         value: https://zenoxi.vercel.app
