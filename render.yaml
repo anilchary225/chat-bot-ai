@@ -15,4 +15,4 @@ services:
       - key: OLLAMA_MODEL
         value: qwen3.5:0.8b
       - key: FRONTEND_ORIGIN
-        value: https://chat-bot-ai-anil-charys-projects.vercel.app
+        value: https://zenoxi.vercel.app

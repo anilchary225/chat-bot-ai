@@ -53,6 +53,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=list(dict.fromkeys([
         settings.frontend_origin,
+        "https://zenoxi.vercel.app",
+        "https://www.zenoxi.vercel.app",
+        "https://chat-bot-ai-anil-charys-projects.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
     ])),
