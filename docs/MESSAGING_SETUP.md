@@ -42,21 +42,31 @@ Pick any random string as your verify token and set it as `META_VERIFY_TOKEN` on
    To use your own number, add it under **Phone numbers**, get the display name approved, and switch the app to **Live**.
    Business verification raises the daily conversation limit.
 
-## Instagram (Instagram API with Instagram Login)
+## Instagram
 
-1. In the Instagram app: **Settings → Account type** → switch to Professional. Then
+Newer Meta apps use **"API setup with Unified login"** (older apps show "API setup with Instagram login").
+Zenoxi supports both; it picks the right one from the token you paste.
+
+Testing with your own accounts needs no business verification or App Review. You need the bot's Instagram
+account (Professional) and a second Instagram account to chat with it.
+
+1. In the bot's Instagram app: **Settings → Account type and tools → Switch to professional account**, then
    **Settings → Messages and story replies → Message controls → Connected tools → Allow access to messages**.
-2. In the same Meta app, add the **Instagram** product and open **API setup with Instagram login**.
-3. **Generate access tokens**: add your Instagram account and copy the token → `INSTAGRAM_ACCESS_TOKEN`.
-   Set `INSTAGRAM_USERNAME` to the account's username (without @).
-   Long-lived Instagram tokens last about 60 days; refresh it before it expires
-   (`GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=TOKEN`).
-4. Copy the **Instagram app secret** (shown in the Instagram product's business login settings) → `INSTAGRAM_APP_SECRET`.
-5. **Configure webhooks**: callback URL `https://YOUR-API.onrender.com/webhooks/instagram`, the same verify token,
-   then subscribe to the **`messages`** field.
-6. While the app is in development mode only accounts with a role on the app (add them as Instagram testers) can chat
-   with the bot. To open it to everyone, complete **App Review** for `instagram_business_manage_messages` and business
-   verification.
+2. Meta app → **App roles → Roles → Add people → Instagram tester**: add the bot account **and** the second
+   account. Accept each invite while logged in as that account (instagram.com → Settings → Apps and websites →
+   Tester invites).
+3. **Use cases → Instagram API → Customize → API setup with Unified login → 2. Generate access tokens →
+   Add account**, pick the bot account and copy its access token → `INSTAGRAM_ACCESS_TOKEN`.
+   (If your app shows "API setup with Instagram login" instead, the token starts with `IG` and you also set
+   `INSTAGRAM_APP_SECRET` from that page.) You can skip "1. Configure your app" and the redirect URL: those are
+   for letting other people connect their own Instagram accounts.
+4. `INSTAGRAM_USERNAME` = the bot's username without @. `INSTAGRAM_ACCOUNT_ID` is optional (shown next to the
+   account after step 3); Zenoxi also learns it from incoming messages.
+5. **3. Configure webhooks**: callback URL `https://YOUR-API.onrender.com/webhooks/instagram`, the same verify
+   token, **Verify and save**, then subscribe to **`messages`**. Unified-login webhooks are signed with the
+   Meta **App secret** (`META_APP_SECRET`), which you already set for WhatsApp.
+6. Ignore **4. Complete App Review** while testing: it is only needed to let people who aren't testers chat with
+   the bot (and that also needs business verification).
 
 ## Set the variables and test
 
@@ -71,6 +81,7 @@ WHATSAPP_DISPLAY_NUMBER=15551234567
 INSTAGRAM_ACCESS_TOKEN=...
 INSTAGRAM_APP_SECRET=...
 INSTAGRAM_USERNAME=yourbot
+INSTAGRAM_ACCOUNT_ID=   # optional, Unified login
 PUBLIC_FRONTEND_URL=https://zenoxi.vercel.app
 ```
 

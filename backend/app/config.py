@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     instagram_access_token: str | None = None
     instagram_app_secret: str | None = None
     instagram_username: str | None = None
+    instagram_account_id: str | None = None
     auth_secret: str | None = None
     google_client_id: str | None = None
     brevo_api_key: str | None = None

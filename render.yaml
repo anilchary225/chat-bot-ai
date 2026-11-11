@@ -50,6 +50,8 @@ services:
         sync: false
       - key: INSTAGRAM_USERNAME
         sync: false
+      - key: INSTAGRAM_ACCOUNT_ID
+        sync: false
       - key: PUBLIC_FRONTEND_URL
         value: https://zenoxi.vercel.app
       - key: FRONTEND_ORIGIN

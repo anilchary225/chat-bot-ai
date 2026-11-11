@@ -7,6 +7,7 @@ Both apps talk to the same chats as the website:
 Replies to users who message first are free on both platforms (24-hour window).
 """
 import asyncio
+import contextvars
 import hashlib
 import hmac
 import json
@@ -145,15 +146,35 @@ async def whatsapp_typing(message_id: str) -> None:
         pass
 
 
+# Instagram account that received the webhook being handled (entry.id).
+CURRENT_IG_ACCOUNT: contextvars.ContextVar[str | None] = contextvars.ContextVar("ig_account", default=None)
+
+
+def instagram_messages_url() -> str:
+    """Where to send Instagram replies, based on the kind of token configured.
+
+    - "Instagram login" tokens (start with IG) use graph.instagram.com/me/messages.
+    - "Unified login" / Facebook tokens (system-user or page tokens, start with EAA)
+      use graph.facebook.com/<instagram account id>/messages.
+    """
+    token = settings.instagram_access_token or ""
+    if token.startswith("IG"):
+        return _graph("me/messages", "graph.instagram.com")
+    account_id = settings.instagram_account_id or CURRENT_IG_ACCOUNT.get()
+    if not account_id:
+        raise RuntimeError("Set INSTAGRAM_ACCOUNT_ID to reply with a Unified-login token.")
+    return _graph(f"{account_id}/messages")
+
+
 async def send_instagram(to: str, text: str) -> None:
-    await _post(_graph("me/messages", "graph.instagram.com"), settings.instagram_access_token, {
+    await _post(instagram_messages_url(), settings.instagram_access_token, {
         "recipient": {"id": to}, "message": {"text": text},
     })
 
 
 async def instagram_typing(to: str) -> None:
     try:
-        await _post(_graph("me/messages", "graph.instagram.com"), settings.instagram_access_token, {
+        await _post(instagram_messages_url(), settings.instagram_access_token, {
             "recipient": {"id": to}, "sender_action": "typing_on",
         })
     except Exception:
@@ -332,6 +353,7 @@ async def process_whatsapp(payload: dict) -> None:
 async def process_instagram(payload: dict) -> None:
     for entry in payload.get("entry", []):
         account_id = str(entry.get("id", ""))
+        CURRENT_IG_ACCOUNT.set(account_id or None)
         for event in entry.get("messaging", []) or []:
             message = event.get("message") or {}
             sender = str(event.get("sender", {}).get("id", ""))
@@ -351,11 +373,15 @@ async def process_instagram(payload: dict) -> None:
 
 # ---------- webhooks ----------
 
-def verify_signature(body: bytes, header: str | None, secret: str | None) -> bool:
-    if not secret or not header or not header.startswith("sha256="):
+def verify_signature(body: bytes, header: str | None, *secrets: str | None) -> bool:
+    """True if the X-Hub-Signature-256 header matches the body for any configured secret."""
+    if not header or not header.startswith("sha256="):
         return False
-    expected = hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
-    return hmac.compare_digest(expected, header.removeprefix("sha256="))
+    given = header.removeprefix("sha256=")
+    for secret in secrets:
+        if secret and hmac.compare_digest(hmac.new(secret.encode(), body, hashlib.sha256).hexdigest(), given):
+            return True
+    return False
 
 
 def verify_challenge(mode: str | None, token: str | None, challenge: str | None) -> PlainTextResponse:
@@ -378,9 +404,9 @@ async def instagram_verify(mode: str | None = Query(None, alias="hub.mode"),
     return verify_challenge(mode, token, challenge)
 
 
-async def _receive(request: Request, secret: str | None) -> dict:
+async def _receive(request: Request, *secrets: str | None) -> dict:
     body = await request.body()
-    if not verify_signature(body, request.headers.get("X-Hub-Signature-256"), secret):
+    if not verify_signature(body, request.headers.get("X-Hub-Signature-256"), *secrets):
         raise HTTPException(status_code=403, detail="Bad signature")
     try:
         return json.loads(body)
@@ -397,6 +423,7 @@ async def whatsapp_webhook(request: Request, background: BackgroundTasks):
 
 @router.post("/webhooks/instagram")
 async def instagram_webhook(request: Request, background: BackgroundTasks):
-    payload = await _receive(request, settings.instagram_app_secret or settings.meta_app_secret)
+    # Instagram-login apps sign with the Instagram app secret; Unified-login apps with the Meta app secret.
+    payload = await _receive(request, settings.instagram_app_secret, settings.meta_app_secret)
     background.add_task(process_instagram, payload)
     return {"ok": True}
