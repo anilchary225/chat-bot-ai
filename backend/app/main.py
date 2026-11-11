@@ -4,7 +4,9 @@ from bson import ObjectId
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+import httpx
 import json
+import logging
 
 from .config import settings
 from .db import connect_db, close_db, get_db
@@ -16,6 +18,7 @@ SYSTEM_PROMPT = (
     "Answer clearly and accurately. If you are unsure, say so. "
     "Do not claim to have accessed live information or external systems."
 )
+logger = logging.getLogger("zenoxi.model")
 
 def now():
     return datetime.now(timezone.utc)
@@ -165,11 +168,31 @@ async def send_message(chat_id: str, payload: SendMessageRequest):
                 "type": "done",
                 "message_id": str(result.inserted_id)
             }) + "\n"
-        except Exception as exc:
-            # Keep internal exception details out of the public response.
+        except httpx.HTTPStatusError as exc:
+            status = exc.response.status_code
+            logger.exception("Ollama Cloud returned HTTP %s", status)
+            if status in (401, 403):
+                message = "Ollama Cloud rejected the API key. Check OLLAMA_API_KEY in Render."
+            elif status == 404:
+                message = "Ollama Cloud couldn't find the model. Check OLLAMA_MODEL in Render."
+            elif status == 429:
+                message = "Ollama Cloud usage limit reached. Check your Ollama account usage."
+            elif status >= 500:
+                message = "Ollama Cloud is temporarily unavailable. Try again shortly."
+            else:
+                message = f"Ollama Cloud returned an error (HTTP {status}). Check the Render logs."
+            yield json.dumps({"type": "error", "message": message}) + "\n"
+        except httpx.RequestError:
+            logger.exception("Could not connect to Ollama Cloud")
             yield json.dumps({
                 "type": "error",
-                "message": "The AI model service is unavailable. Check the backend's Ollama configuration and API key."
+                "message": "Couldn't connect to Ollama Cloud. Check OLLAMA_BASE_URL in Render."
+            }) + "\n"
+        except Exception:
+            logger.exception("Unexpected error while streaming an Ollama response")
+            yield json.dumps({
+                "type": "error",
+                "message": "Zenoxi couldn't get a reply. Check the Render logs for the model request error."
             }) + "\n"
 
     return StreamingResponse(event_stream(), media_type="application/x-ndjson")
