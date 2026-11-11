@@ -18,7 +18,7 @@ Phase 1 runs locally. It includes chat sessions, conversation history, streaming
 
 Create a MongoDB Atlas cluster, create a database user, and allow your development IP in Network Access.
 
-Copy `.env.example` to `backend/.env` and set `MONGODB_URI` and `OPENROUTER_API_KEY`.
+Copy `backend/.env.example` to `backend/.env` and set `MONGODB_URI` and `OPENROUTER_API_KEY`.
 The backend uses OpenRouter's `openrouter/free` router, which selects a free model.
 Do not commit `backend/.env`.
 
