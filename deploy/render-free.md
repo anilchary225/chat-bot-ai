@@ -4,8 +4,10 @@
 
 After creation, set the Vercel project's Production environment variable `VITE_API_URL` to the service's `https://<service>.onrender.com` URL, then redeploy the frontend.
 
-## Ollama limitation
+## Ollama Cloud
 
-The service defaults to `OLLAMA_BASE_URL=http://127.0.0.1:11434`, which points to the Render instance itself. Render Free gives a web service 512 MB RAM, spins it down after 15 minutes of inactivity, and does not provide a persistent disk. It cannot host this app's local Ollama model. For replies to work, configure `OLLAMA_BASE_URL` to an Ollama API that Render can reach. A temporary Cloudflare Quick Tunnel can expose Ollama running on your Mac for a demo, but its hostname changes, your Mac must stay online, and Quick Tunnels are intended for testing.
+The Render Blueprint configures the backend to call Ollama Cloud at `https://ollama.com` with the `gemma4:31b` cloud model. Render cannot reach Ollama on your computer at `127.0.0.1:11434`.
 
-Once `OLLAMA_BASE_URL` points to an available model endpoint, verify `GET /api/health` and send a chat message. The Render free service can take about a minute to wake after being idle.
+Before chatting, create an Ollama API key and add it to the Render service as the secret environment variable `OLLAMA_API_KEY`. Keep the key in Render; never put it in frontend code or commit it to Git. The cloud model name and API availability follow Ollama's current account limits and plans.
+
+The Render Free service can take about a minute to wake after being idle. It still requires a working `MONGODB_URI` to start.

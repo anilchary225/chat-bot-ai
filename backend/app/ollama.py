@@ -3,6 +3,9 @@ from .config import settings
 
 async def stream_chat(messages: list[dict]):
     url = f"{settings.ollama_base_url.rstrip('/')}/api/chat"
+    headers = {}
+    if settings.ollama_api_key:
+        headers["Authorization"] = f"Bearer {settings.ollama_api_key}"
     payload = {
         "model": settings.ollama_model,
         "messages": messages,
@@ -12,7 +15,7 @@ async def stream_chat(messages: list[dict]):
     }
     timeout = httpx.Timeout(connect=10.0, read=180.0, write=30.0, pool=10.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
-        async with client.stream("POST", url, json=payload) as response:
+        async with client.stream("POST", url, json=payload, headers=headers) as response:
             response.raise_for_status()
             async for line in response.aiter_lines():
                 if not line:

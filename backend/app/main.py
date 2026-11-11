@@ -169,7 +169,7 @@ async def send_message(chat_id: str, payload: SendMessageRequest):
             # Keep internal exception details out of the public response.
             yield json.dumps({
                 "type": "error",
-                "message": "The local AI model is unavailable. Check that Ollama is running and the model is downloaded."
+                "message": "The AI model service is unavailable. Check the backend's Ollama configuration and API key."
             }) + "\n"
 
     return StreamingResponse(event_stream(), media_type="application/x-ndjson")
