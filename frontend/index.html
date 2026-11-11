@@ -3,13 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f5f7f8" />
+    <meta name="theme-color" content="#0b0a09" />
     <meta name="description" content="Zenoxi is your AI chat assistant." />
+    <link rel="icon" type="image/svg+xml" href="/zenoxi-logo.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <title>Zenoxi</title>
   </head>
   <body>
+    <script>try{var t=localStorage.getItem("zenoxi-theme")||(matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");document.documentElement.dataset.theme=t;}catch(e){}</script>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
