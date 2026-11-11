@@ -1,4 +1,4 @@
-# VAC AI Chat — Phase 1
+# Zenoxi AI Chat
 
 A standalone, text-only AI chatbot using:
 - React + Vite + Tailwind CSS frontend

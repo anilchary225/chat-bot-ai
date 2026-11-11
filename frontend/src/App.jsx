@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Bot, Plus, MessageSquare, Trash2, Send, PanelLeftClose,
-  PanelLeftOpen, Sparkles, LoaderCircle, Copy, Check, AlertCircle
+  PanelLeftOpen, Sparkles, LoaderCircle, Copy, Check, AlertCircle, Menu, X
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -16,11 +16,41 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 700);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
+  const deleteDialogRef = useRef(null);
+
+  useEffect(() => {
+    const breakpoint = window.matchMedia("(max-width: 700px)");
+    const syncSidebar = () => setSidebarOpen(!breakpoint.matches);
+    breakpoint.addEventListener("change", syncSidebar);
+    return () => breakpoint.removeEventListener("change", syncSidebar);
+  }, []);
+
+  useEffect(() => {
+    const dialog = deleteDialogRef.current;
+    if (!dialog) return;
+    if (deleteTarget && !dialog.open) dialog.showModal();
+    if (!deleteTarget && dialog.open) dialog.close();
+  }, [deleteTarget]);
+
+  useEffect(() => {
+    if (!sidebarOpen || window.innerWidth > 700) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [sidebarOpen]);
 
   const refreshChats = async () => {
     const res = await fetch(`${API}/api/chats`);
@@ -31,13 +61,18 @@ function App() {
   const loadMessages = async (id) => {
     setActiveId(id);
     setError("");
-    const res = await fetch(`${API}/api/chats/${id}/messages`);
-    if (!res.ok) throw new Error("Could not load messages");
-    setMessages(await res.json());
+    if (window.innerWidth <= 700) setSidebarOpen(false);
+    try {
+      const res = await fetch(`${API}/api/chats/${id}/messages`);
+      if (!res.ok) throw new Error();
+      setMessages(await res.json());
+    } catch {
+      setError("Couldn't load that chat. Check your connection and try again.");
+    }
   };
 
   useEffect(() => {
-    refreshChats().catch(() => setError("Backend unavailable. Start the FastAPI server."));
+    refreshChats().catch(() => setError("Couldn't connect to Zenoxi. Check your connection and try again."));
   }, []);
 
   useEffect(() => {
@@ -57,25 +92,27 @@ function App() {
       setActiveId(chat.id);
       setMessages([]);
       setError("");
+      if (window.innerWidth <= 700) setSidebarOpen(false);
       inputRef.current?.focus();
     } catch {
-      setError("Could not create a conversation. Check the backend.");
+      setError("Couldn't start a chat. Check your connection and try again.");
     }
   };
 
-  const removeChat = async (id, event) => {
-    event.stopPropagation();
-    if (!window.confirm("Delete this conversation?")) return;
+  const removeChat = async () => {
+    if (!deleteTarget) return;
     try {
-      const res = await fetch(`${API}/api/chats/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API}/api/chats/${deleteTarget.id}`, { method: "DELETE" });
       if (!res.ok) throw new Error();
-      setChats((old) => old.filter((chat) => chat.id !== id));
-      if (activeId === id) {
+      setChats((old) => old.filter((chat) => chat.id !== deleteTarget.id));
+      if (activeId === deleteTarget.id) {
         setActiveId(null);
         setMessages([]);
       }
+      setDeleteTarget(null);
     } catch {
-      setError("Could not delete this conversation.");
+      setDeleteTarget(null);
+      setError("Couldn't delete that conversation. Try again.");
     }
   };
 
@@ -98,7 +135,7 @@ function App() {
         setActiveId(chatId);
         setChats((old) => [chat, ...old]);
       } catch {
-        setError("Could not create a conversation.");
+        setError("Couldn't start a chat. Check your connection and try again.");
         return;
       }
     }
@@ -153,7 +190,7 @@ function App() {
       setMessages((old) => old.map((m) => m.pending ? { ...m, pending: false } : m));
     } catch (err) {
       setMessages((old) => old.filter((m) => !m.pending));
-      setError(err.message || "Something went wrong while generating a response.");
+      setError(err.message || "Zenoxi couldn't get a reply. Try again.");
     } finally {
       setLoading(false);
       inputRef.current?.focus();
@@ -170,13 +207,35 @@ function App() {
 
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
+        <button
+          className="sidebar-backdrop"
+          type="button"
+          aria-label="Close conversations menu"
+          tabIndex={sidebarOpen && window.innerWidth <= 700 ? 0 : -1}
+          hidden={!sidebarOpen || window.innerWidth > 700}
+          onClick={() => setSidebarOpen(false)}
+        />
+        <aside
+          id="conversation-sidebar"
+          className={`sidebar ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}
+          aria-label="Conversations"
+        >
         <div className="brand">
-          <div className="brand-mark"><Bot size={21} /></div>
-          {sidebarOpen && <div><strong>VAC AI</strong><span>Personal AI chat</span></div>}
+          <img className="brand-mark" src="/zenoxi-logo.png" alt="" aria-hidden="true" />
+          {sidebarOpen && <div><strong>Zenoxi</strong><span>AI chat</span></div>}
+          {sidebarOpen && (
+            <button
+              className="sidebar-close-mobile"
+              type="button"
+              aria-label="Close conversations menu"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
 
-        <button className="new-chat-btn" onClick={newChat}>
+        <button className="new-chat-btn" type="button" onClick={newChat} aria-label="Start a new chat" title="Start a new chat">
           <Plus size={17} /> {sidebarOpen && "New chat"}
         </button>
 
@@ -185,18 +244,27 @@ function App() {
             <div className="side-label">YOUR CONVERSATIONS</div>
             <div className="chat-list">
               {chats.map((chat) => (
-                <button
-                  className={`chat-item ${activeId === chat.id ? "active" : ""}`}
-                  key={chat.id}
-                  onClick={() => loadMessages(chat.id)}
-                  title={chat.title}
-                >
-                  <MessageSquare size={16} />
-                  <span>{chat.title}</span>
-                  <span className="delete-chat" onClick={(e) => removeChat(chat.id, e)}>
-                    <Trash2 size={14} />
-                  </span>
-                </button>
+                <div className={`chat-item-wrap ${activeId === chat.id ? "active" : ""}`} key={chat.id}>
+                  <button
+                    className="chat-item"
+                    type="button"
+                    onClick={() => loadMessages(chat.id)}
+                    title={chat.title}
+                    aria-current={activeId === chat.id ? "page" : undefined}
+                  >
+                    <MessageSquare size={16} aria-hidden="true" />
+                    <span>{chat.title}</span>
+                  </button>
+                  <button
+                    className="delete-chat"
+                    type="button"
+                    aria-label={`Delete ${chat.title}`}
+                    title={`Delete ${chat.title}`}
+                    onClick={() => setDeleteTarget(chat)}
+                  >
+                    <Trash2 size={15} aria-hidden="true" />
+                  </button>
+                </div>
               ))}
               {chats.length === 0 && <p className="empty-history">Your chats will appear here.</p>}
             </div>
@@ -204,8 +272,13 @@ function App() {
         )}
 
         <div className="sidebar-bottom">
-          <div className="model-pill"><span className="status-dot" /> Qwen · Local model</div>
-          <button className="collapse-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <div className="model-pill"><span className="status-dot" /> AI chat</div>
+          <button
+            className="collapse-btn"
+            type="button"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
             {sidebarOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}
             {sidebarOpen && "Collapse sidebar"}
           </button>
@@ -215,24 +288,34 @@ function App() {
       <main className="main-panel">
         <header className="topbar">
           <div className="topbar-title">
-            <span className="mobile-brand"><Bot size={18} /> VAC AI</span>
-            <span>{activeChat?.title || "New conversation"}</span>
+            <button
+              className="menu-toggle"
+              type="button"
+              aria-label={sidebarOpen ? "Close conversations menu" : "Open conversations menu"}
+              aria-expanded={sidebarOpen}
+              aria-controls="conversation-sidebar"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <span className="topbar-brand"><img src="/zenoxi-logo.png" alt="" aria-hidden="true" /> Zenoxi</span>
+            <span className="current-chat-title">{activeChat?.title || "New chat"}</span>
           </div>
-          <div className="topbar-status"><span className="status-dot" /> Local AI</div>
+          <div className="topbar-status"><span className="status-dot" /> AI chat</div>
         </header>
 
         <section className="conversation">
           {messages.length === 0 ? (
             <div className="welcome">
               <div className="welcome-icon"><Sparkles size={25} /></div>
-              <p className="eyebrow">YOUR PRIVATE AI SPACE</p>
-              <h1>What can I help you with?</h1>
-              <p className="welcome-subtitle">Ask a question, explore an idea, or work through a problem.</p>
+              <p className="eyebrow">YOUR AI CHAT</p>
+              <h1>What would you like to ask?</h1>
+              <p className="welcome-subtitle">Ask a question or start with one of these prompts.</p>
               <div className="suggestions">
                 {[
-                  "Explain how artificial intelligence works",
-                  "Help me learn Python programming",
-                  "Give me ideas for a software project"
+                  "Explain a difficult topic in simple terms",
+                  "Help me write a Python script",
+                  "Suggest ideas for a small app"
                 ].map((suggestion) => (
                   <button key={suggestion} onClick={() => { setInput(suggestion); inputRef.current?.focus(); }}>
                     <Sparkles size={15} /> {suggestion}
@@ -248,7 +331,7 @@ function App() {
                     {message.role === "assistant" ? <Bot size={18} /> : "You"}
                   </div>
                   <div className="message-content">
-                    <div className="message-author">{message.role === "assistant" ? "VAC AI" : "You"}</div>
+                    <div className="message-author">{message.role === "assistant" ? "Zenoxi" : "You"}</div>
                     {message.pending && !message.content ? (
                       <div className="thinking"><LoaderCircle size={16} className="spin" /> Thinking...</div>
                     ) : message.role === "assistant" ? (
@@ -270,7 +353,7 @@ function App() {
           )}
         </section>
 
-        {error && <div className="error-banner"><AlertCircle size={16} /> {error}</div>}
+        {error && <div className="error-banner" role="alert"><AlertCircle size={17} /> {error}</div>}
 
         <form className="composer-wrap" onSubmit={send}>
           <div className="composer">
@@ -284,17 +367,40 @@ function App() {
                   send();
                 }
               }}
-              placeholder="Message VAC AI..."
+              placeholder="Message Zenoxi..."
+              aria-label="Message Zenoxi"
               rows={1}
               disabled={loading}
             />
-            <button className="send-btn" type="submit" disabled={!input.trim() || loading}>
+            <button className="send-btn" type="submit" aria-label="Send message" title="Send message" disabled={!input.trim() || loading}>
               {loading ? <LoaderCircle size={18} className="spin" /> : <Send size={18} />}
             </button>
           </div>
-          <p className="disclaimer">VAC AI can make mistakes. Verify important information.</p>
+          <p className="disclaimer">Check important details before you rely on them.</p>
         </form>
       </main>
+
+      <dialog
+        className="delete-dialog"
+        ref={deleteDialogRef}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+        onCancel={(event) => { event.preventDefault(); setDeleteTarget(null); }}
+        onClose={() => setDeleteTarget(null)}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setDeleteTarget(null);
+        }}
+      >
+        <div className="delete-dialog-icon"><Trash2 size={20} /></div>
+        <h2 id="delete-dialog-title">Delete this chat?</h2>
+        <p id="delete-dialog-description">
+        {deleteTarget ? `"${deleteTarget.title}" will be permanently deleted.` : "This chat will be permanently deleted."}
+        </p>
+        <div className="delete-dialog-actions">
+          <button className="dialog-cancel" type="button" autoFocus onClick={() => setDeleteTarget(null)}>Cancel</button>
+          <button className="dialog-delete" type="button" onClick={removeChat}>Delete chat</button>
+        </div>
+      </dialog>
     </div>
   );
 }

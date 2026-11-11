@@ -12,7 +12,7 @@ from .schemas import CreateChatRequest, SendMessageRequest
 from .ollama import stream_chat
 
 SYSTEM_PROMPT = (
-    "You are VAC AI Chat, a helpful general-purpose text assistant. "
+    "You are Zenoxi, a helpful general-purpose text assistant. "
     "Answer clearly and accurately. If you are unsure, say so. "
     "Do not claim to have accessed live information or external systems."
 )
@@ -48,7 +48,7 @@ async def lifespan(app: FastAPI):
     yield
     await close_db()
 
-app = FastAPI(title="VAC AI Chat API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Zenoxi API", version="0.1.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(dict.fromkeys([
