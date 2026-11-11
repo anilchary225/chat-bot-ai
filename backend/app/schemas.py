@@ -6,6 +6,8 @@ class CreateChatRequest(BaseModel):
 
 class SendMessageRequest(BaseModel):
     content: str = Field(min_length=1, max_length=12000)
+    web_search: bool = False
+    attachment_ids: list[str] = Field(default_factory=list, max_length=10)
 
 class ChatOut(BaseModel):
     id: str

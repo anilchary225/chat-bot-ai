@@ -4,15 +4,18 @@ import {
 } from "framer-motion";
 import {
   Plus, MessageSquare, Trash2, ArrowUp, PanelLeftClose, PanelLeftOpen, LoaderCircle,
-  Copy, Check, AlertCircle, Menu, X, Sun, Moon, Search, Lightbulb, Code2, Rocket, PenLine, ArrowDown
+  Copy, Check, AlertCircle, Menu, X, Sun, Moon, Search, Lightbulb, Code2, Rocket, PenLine, ArrowDown, Globe, Info, Paperclip, Upload, Briefcase, LogOut
 } from "lucide-react";
 import Orb from "./components/Orb";
 import Aurora from "./components/Aurora";
 import Markdown from "./components/Markdown";
+import Sources from "./components/Sources";
+import ResumeTool from "./components/ResumeTool";
+import ContinueOn from "./components/ContinueOn";
+import { forgetKey, keyHeaders, listHeaders, saveKey } from "./chatKeys";
+import { AttachmentChip, ACCEPT, MAX_FILE_BYTES, isSupported } from "./components/Attachments";
 
-const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD
-  ? "https://chat-bot-ai-ouc2.onrender.com"
-  : "http://127.0.0.1:8000");
+import { API } from "./config";
 
 const MOBILE_QUERY = "(max-width: 700px)";
 const spring = { type: "spring", stiffness: 380, damping: 32 };
@@ -100,13 +103,14 @@ function TiltCard({ children, onClick, tone, index }) {
   );
 }
 
-function Welcome({ onPick }) {
+function Welcome({ onPick, name }) {
   const [verb, setVerb] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setVerb((v) => (v + 1) % VERBS.length), 2200);
     return () => clearInterval(id);
   }, []);
-  const words = `${greeting()}.`.split(" ");
+  const first = (name || "").split(" ")[0];
+  const words = `${greeting()}${first ? `, ${first}` : ""}.`.split(" ");
 
   return (
     <div className="welcome">
@@ -178,7 +182,7 @@ function Welcome({ onPick }) {
   );
 }
 
-function App() {
+function App({ user, onSignOut }) {
   const isMobile = useIsMobile();
   const [chats, setChats] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -196,9 +200,21 @@ function App() {
   const [copied, setCopied] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [query, setQuery] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [view, setView] = useState("chat");
+  const [dragging, setDragging] = useState(false);
+  const fileInputRef = useRef(null);
+  const dragDepth = useRef(0);
+  const [webSearch, setWebSearch] = useState(() => {
+    try { return localStorage.getItem("zenoxi-web") === "1"; } catch { return false; }
+  });
   const [atBottom, setAtBottom] = useState(true);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    try { localStorage.setItem("zenoxi-web", webSearch ? "1" : "0"); } catch { /* ignore */ }
+  }, [webSearch]);
 
   // Composer border glow follows streaming energy
   const energy = loading ? 1 : 0;
@@ -245,13 +261,22 @@ function App() {
   }, [input]);
 
   const refreshChats = async () => {
-    const res = await fetch(`${API}/api/chats`);
+    const res = await fetch(`${API}/api/chats`, { headers: listHeaders() });
     if (!res.ok) throw new Error("Could not load conversations");
     setChats(await res.json());
   };
 
   useEffect(() => {
+    // A private link from WhatsApp/Instagram ("/web") looks like /?chat=ID&key=KEY.
+    const params = new URLSearchParams(window.location.search);
+    const linkedId = params.get("chat");
+    if (linkedId && params.get("key")) {
+      saveKey(linkedId, params.get("key"));
+      window.history.replaceState(null, "", window.location.pathname);
+      loadMessages(linkedId);
+    }
     refreshChats().catch(() => setError("Couldn't connect to Zenoxi. Check your connection and try again."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const scrollToBottom = (behavior = "smooth") => {
@@ -272,11 +297,13 @@ function App() {
 
   const loadMessages = async (id) => {
     setActiveId(id);
+    setView("chat");
+    setAttachments([]);
     setError("");
     setAtBottom(true);
     if (isMobile) setSidebarOpen(false);
     try {
-      const res = await fetch(`${API}/api/chats/${id}/messages`);
+      const res = await fetch(`${API}/api/chats/${id}/messages`, { headers: keyHeaders(id) });
       if (!res.ok) throw new Error();
       setMessages(await res.json());
     } catch {
@@ -300,7 +327,9 @@ function App() {
   const newChat = async () => {
     try {
       await createChat();
+      setView("chat");
       setMessages([]);
+      setAttachments([]);
       setError("");
       if (isMobile) setSidebarOpen(false);
       inputRef.current?.focus();
@@ -327,8 +356,9 @@ function App() {
     const target = deleteTarget;
     setDeleteTarget(null);
     try {
-      const res = await fetch(`${API}/api/chats/${target.id}`, { method: "DELETE" });
+      const res = await fetch(`${API}/api/chats/${target.id}`, { method: "DELETE", headers: keyHeaders(target.id) });
       if (!res.ok) throw new Error();
+      forgetKey(target.id);
       setChats((old) => old.filter((chat) => chat.id !== target.id));
       if (activeId === target.id) {
         setActiveId(null);
@@ -339,10 +369,81 @@ function App() {
     }
   };
 
+  const patchAttachment = (key, patch) =>
+    setAttachments((old) => old.map((a) => (a.key === key ? { ...a, ...patch } : a)));
+
+  const uploadFiles = async (fileList) => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    let chatId = activeId;
+    if (!chatId) {
+      try {
+        chatId = (await createChat()).id;
+      } catch {
+        setError("Couldn't start a chat. Check your connection and try again.");
+        return;
+      }
+    }
+    files.forEach(async (file, i) => {
+      const key = `${Date.now()}-${i}-${file.name}`;
+      const base = { key, filename: file.name, size: file.size };
+      if (!isSupported(file.name)) {
+        setAttachments((old) => [...old, { ...base, status: "error", error: "Unsupported file type" }]);
+        return;
+      }
+      if (file.size > MAX_FILE_BYTES) {
+        setAttachments((old) => [...old, { ...base, status: "error", error: "Larger than 10 MB" }]);
+        return;
+      }
+      setAttachments((old) => [...old, { ...base, status: "uploading" }]);
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch(`${API}/api/chats/${chatId}/documents`, { method: "POST", body: form, headers: keyHeaders(chatId) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Couldn't read this file");
+        patchAttachment(key, { status: "ready", ...data });
+      } catch (err) {
+        patchAttachment(key, { status: "error", error: err.message || "Upload failed" });
+      }
+    });
+  };
+
+  const removeAttachment = async (item) => {
+    setAttachments((old) => old.filter((a) => a.key !== item.key));
+    if (item.status === "ready" && activeId) {
+      fetch(`${API}/api/chats/${activeId}/documents/${item.id}`, { method: "DELETE", headers: keyHeaders(activeId) }).catch(() => {});
+    }
+  };
+
+  const onDragEnter = (event) => {
+    if (view !== "chat" || !event.dataTransfer?.types?.includes("Files")) return;
+    event.preventDefault();
+    dragDepth.current += 1;
+    setDragging(true);
+  };
+  const onDragLeave = () => {
+    dragDepth.current = Math.max(0, dragDepth.current - 1);
+    if (!dragDepth.current) setDragging(false);
+  };
+  const onDrop = (event) => {
+    event.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    if (!loading) uploadFiles(event.dataTransfer.files);
+  };
+
+  const readyFiles = attachments.filter((a) => a.status === "ready");
+  const uploading = attachments.some((a) => a.status === "uploading");
+  const canSend = (input.trim() || readyFiles.length > 0) && !loading && !uploading;
+
   const send = async (event) => {
     event?.preventDefault();
-    const text = input.trim();
-    if (!text || loading) return;
+    if (!canSend) return;
+    const text = input.trim() || (readyFiles.length > 1
+      ? "Please read the attached files and give me a short summary of each."
+      : "Please read the attached file and give me a short summary.");
+    const sentFiles = readyFiles.map(({ id, filename, kind, pages }) => ({ id, filename, kind, pages }));
     let chatId = activeId;
 
     if (!chatId) {
@@ -355,20 +456,21 @@ function App() {
     }
 
     setInput("");
+    setAttachments([]);
     setError("");
     setLoading(true);
     setAtBottom(true);
     const stamp = Date.now();
     setMessages((old) => [...old,
-      { id: `user-${stamp}`, role: "user", content: text },
-      { id: `assistant-${stamp}`, role: "assistant", content: "", pending: true }
+      { id: `user-${stamp}`, role: "user", content: text, attachments: sentFiles },
+      { id: `assistant-${stamp}`, role: "assistant", content: "", pending: true, stage: webSearch ? "searching" : "thinking", sources: [] }
     ]);
 
     try {
       const res = await fetch(`${API}/api/chats/${chatId}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: text })
+        headers: keyHeaders(chatId, { "Content-Type": "application/json" }),
+        body: JSON.stringify({ content: text, web_search: webSearch, attachment_ids: sentFiles.map((f) => f.id) })
       });
       if (!res.ok || !res.body) throw new Error("AI request failed");
 
@@ -376,6 +478,11 @@ function App() {
       const decoder = new TextDecoder();
       let buffer = "";
       let answer = "";
+      const patchLast = (patch) => setMessages((old) => {
+        const copy = [...old];
+        copy[copy.length - 1] = { ...copy[copy.length - 1], ...patch };
+        return copy;
+      });
 
       while (true) {
         const { value, done } = await reader.read();
@@ -389,11 +496,13 @@ function App() {
           const evt = JSON.parse(line);
           if (evt.type === "token") {
             answer += evt.content;
-            setMessages((old) => {
-              const copy = [...old];
-              copy[copy.length - 1] = { ...copy[copy.length - 1], content: answer };
-              return copy;
-            });
+            patchLast({ content: answer });
+          } else if (evt.type === "status") {
+            patchLast({ stage: evt.stage });
+          } else if (evt.type === "sources") {
+            patchLast({ sources: evt.sources, stage: "thinking" });
+          } else if (evt.type === "notice") {
+            patchLast({ notice: evt.message, stage: "thinking" });
           } else if (evt.type === "error") {
             throw new Error(evt.message);
           }
@@ -420,6 +529,29 @@ function App() {
   };
 
   const activeChat = chats.find((chat) => chat.id === activeId);
+
+  // Live sync: linked chats can get new messages from WhatsApp/Instagram.
+  const messagesRef = useRef(messages);
+  messagesRef.current = messages;
+  useEffect(() => {
+    if (!activeId || view !== "chat" || loading || !activeChat?.private) return undefined;
+    const poll = async () => {
+      if (document.hidden) return;
+      try {
+        const res = await fetch(`${API}/api/chats/${activeId}/messages`, { headers: keyHeaders(activeId) });
+        if (!res.ok) return;
+        const fresh = await res.json();
+        const current = messagesRef.current;
+        if (fresh.length !== current.length || fresh.at(-1)?.content !== current.at(-1)?.content) {
+          setMessages(fresh);
+          refreshChats().catch(() => {});
+        }
+      } catch { /* offline: try again next tick */ }
+    };
+    const id = setInterval(poll, 4000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, view, loading, activeChat?.private]);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return q ? chats.filter((c) => c.title.toLowerCase().includes(q)) : chats;
@@ -428,6 +560,7 @@ function App() {
   const expanded = sidebarOpen || isMobile;
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
   const orbState = loading ? (lastAssistant?.content ? "streaming" : "thinking") : "idle";
+  const searching = loading && !lastAssistant?.content && lastAssistant?.stage === "searching";
 
   const sidebarAnimate = isMobile
     ? { x: sidebarOpen ? 0 : "-105%" }
@@ -500,6 +633,19 @@ function App() {
             {expanded && <kbd>⌘K</kbd>}
           </motion.button>
 
+          <motion.button
+            type="button"
+            className={`tool-btn ${view === "resume" ? "active" : ""}`}
+            onClick={() => { setView("resume"); if (isMobile) setSidebarOpen(false); }}
+            aria-label="Open Resume ATS Match"
+            title="Resume ATS Match"
+            whileHover={{ x: expanded ? 2 : 0 }}
+            whileTap={{ scale: 0.96 }}
+          >
+            <span className="tool-icon"><Briefcase size={16} /></span>
+            {expanded && <span className="tool-text"><strong>Resume ATS Match</strong><em>Tailor to a job</em></span>}
+          </motion.button>
+
           {expanded && (
             <>
               <label className="search">
@@ -540,6 +686,7 @@ function App() {
                               >
                                 <MessageSquare size={15} aria-hidden="true" />
                                 <span>{chat.title}</span>
+                                {chat.channels?.map((c) => <i key={c} className={`ch-dot ch-${c}`} title={`Linked to ${c}`} />)}
                               </button>
                               <button
                                 className="delete-chat"
@@ -564,9 +711,20 @@ function App() {
           )}
 
           <div className="sidebar-bottom">
-            <div className="model-pill" title="Zenoxi is online">
-              <span className="status-dot" />
-              {expanded && <span>Online · AI chat</span>}
+            <div className="user-pill" title={user.email}>
+              <span className="user-avatar">
+                {user.picture
+                  ? <img src={user.picture} alt="" referrerPolicy="no-referrer" />
+                  : (user.name || user.email).trim()[0]?.toUpperCase()}
+              </span>
+              {expanded && (
+                <span className="user-text"><strong>{user.name}</strong><em>{user.email}</em></span>
+              )}
+              {expanded && (
+                <button type="button" className="user-logout" onClick={onSignOut} aria-label="Sign out" title="Sign out">
+                  <LogOut size={15} />
+                </button>
+              )}
             </div>
             {!isMobile && (
               <button
@@ -583,7 +741,41 @@ function App() {
           </div>
         </motion.aside>
 
-        <main className="main-panel">
+        <main
+          className="main-panel"
+          onDragEnter={onDragEnter}
+          onDragOver={(event) => { if (dragging) event.preventDefault(); }}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+        >
+          <AnimatePresence>
+            {dragging && (
+              <motion.div
+                className="drop-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  className="drop-card"
+                  initial={{ scale: 0.9, y: 10 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.95 }}
+                  transition={spring}
+                >
+                  <motion.span
+                    className="drop-icon"
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                  >
+                    <Upload size={26} />
+                  </motion.span>
+                  <strong>Drop files to add them</strong>
+                  <span>PDF, Word, TXT, Markdown, CSV, JSON or code · up to 10 MB</span>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           <header className="topbar">
             <div className="topbar-title">
               {isMobile && (
@@ -600,20 +792,28 @@ function App() {
               )}
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
-                  key={activeChat?.title || "new"}
+                  key={view === "resume" ? "resume" : activeChat?.title || "new"}
                   className="current-chat-title"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.18 }}
                 >
-                  {activeChat?.title || "New conversation"}
+                  {view === "resume" ? "Resume ATS Match" : activeChat?.title || "New conversation"}
                 </motion.span>
               </AnimatePresence>
             </div>
             <div className="topbar-actions">
+              {view === "chat" && activeId && (
+                <ContinueOn
+                  api={API}
+                  chatId={activeId}
+                  channels={activeChat?.channels}
+                  onLinked={() => refreshChats().catch(() => {})}
+                />
+              )}
               <AnimatePresence>
-                {loading && (
+                {loading && view === "chat" && (
                   <motion.div
                     className="live-chip"
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -621,7 +821,7 @@ function App() {
                     exit={{ opacity: 0, scale: 0.8 }}
                   >
                     <span className="eq"><i /><i /><i /><i /></span>
-                    {orbState === "thinking" ? "Thinking" : "Writing"}
+                    {searching ? "Searching" : orbState === "thinking" ? "Thinking" : "Writing"}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -649,6 +849,11 @@ function App() {
             </div>
           </header>
 
+          {view === "resume" ? (
+            <section className="conversation tool-view">
+              <ResumeTool api={API} />
+            </section>
+          ) : (<>
           <section className="conversation" ref={scrollRef} onScroll={onScroll}>
             <AnimatePresence mode="wait" initial={false}>
               {messages.length === 0 ? (
@@ -657,7 +862,7 @@ function App() {
                   exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
                   transition={{ duration: 0.25 }}
                 >
-                  <Welcome onPick={(text) => { setInput(text); inputRef.current?.focus(); }} />
+                  <Welcome name={user.name} onPick={(text) => { setInput(text); inputRef.current?.focus(); }} />
                 </motion.div>
               ) : (
                 <motion.div
@@ -688,10 +893,18 @@ function App() {
                             </div>
                           )}
                           <div className="message-content">
-                            {isAssistant && <div className="message-author">Zenoxi</div>}
+                            {isAssistant && (
+                              <div className="message-author">
+                                Zenoxi
+                                {message.channel && message.channel !== "web" && <span className={`via via-${message.channel}`}>via {message.channel === "whatsapp" ? "WhatsApp" : "Instagram"}</span>}
+                              </div>
+                            )}
                             {message.pending && !message.content ? (
                               <div className="thinking">
-                                <span className="shimmer">Thinking</span>
+                                {message.stage === "searching" && <Globe size={15} className="thinking-globe" />}
+                                <span className="shimmer">
+                                  {message.stage === "searching" ? "Searching the web" : message.sources?.length ? `Reading ${message.sources.length} sources` : "Thinking"}
+                                </span>
                                 <span className="dots">
                                   {[0, 1, 2].map((i) => (
                                     <motion.i
@@ -703,10 +916,26 @@ function App() {
                                 </span>
                               </div>
                             ) : isAssistant ? (
-                              <Markdown streaming={isLive}>{message.content}</Markdown>
+                              <Markdown streaming={isLive} sources={message.sources}>{message.content}</Markdown>
                             ) : (
-                              <p className="user-bubble">{message.content}</p>
+                              <div className="user-stack">
+                                {message.attachments?.length > 0 && (
+                                  <div className="bubble-files">
+                                    {message.attachments.map((file) => (
+                                      <AttachmentChip key={file.id} item={{ ...file, status: "ready" }} compact />
+                                    ))}
+                                  </div>
+                                )}
+                                <p className="user-bubble">{message.content}</p>
+                                {message.channel && message.channel !== "web" && (
+                                  <span className={`via via-${message.channel}`}>sent from {message.channel === "whatsapp" ? "WhatsApp" : "Instagram"}</span>
+                                )}
+                              </div>
                             )}
+                            {isAssistant && message.notice && (
+                              <p className="message-notice"><Info size={13} /> {message.notice}</p>
+                            )}
+                            {isAssistant && message.sources?.length > 0 && <Sources sources={message.sources} />}
                             {isAssistant && message.content && !isLive && (
                               <motion.div className="message-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                                 <button className="copy-btn" type="button" onClick={() => copyMessage(message.content, message.id)}>
@@ -776,6 +1005,60 @@ function App() {
               transition={{ ...softSpring, delay: 0.2 }}
             >
               <div className="composer-inner">
+                <AnimatePresence initial={false}>
+                  {attachments.length > 0 && (
+                    <motion.div
+                      className="composer-files"
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <AnimatePresence initial={false}>
+                        {attachments.map((item) => (
+                          <AttachmentChip key={item.key} item={item} onRemove={() => removeAttachment(item)} />
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept={ACCEPT}
+                  multiple
+                  hidden
+                  onChange={(event) => { uploadFiles(event.target.files); event.target.value = ""; }}
+                />
+                <motion.button
+                  type="button"
+                  className="attach-btn"
+                  aria-label="Attach files"
+                  title="Attach files (PDF, Word, text, CSV, code)"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                  whileTap={{ scale: 0.88, rotate: -20 }}
+                >
+                  <Paperclip size={17} />
+                </motion.button>
+                <motion.button
+                  type="button"
+                  className={`web-toggle ${webSearch ? "on" : ""}`}
+                  aria-pressed={webSearch}
+                  aria-label="Search the web for answers"
+                  title={webSearch ? "Web search on: answers use live results" : "Web search off"}
+                  onClick={() => setWebSearch((v) => !v)}
+                  whileTap={{ scale: 0.92 }}
+                  layout
+                >
+                  <motion.span
+                    style={{ display: "grid" }}
+                    animate={webSearch ? { rotate: 360 } : { rotate: 0 }}
+                    transition={webSearch ? { duration: 8, repeat: Infinity, ease: "linear" } : { duration: 0.3 }}
+                  >
+                    <Globe size={16} />
+                  </motion.span>
+                  <span className="web-label">Web</span>
+                </motion.button>
                 <textarea
                   ref={inputRef}
                   value={input}
@@ -786,7 +1069,7 @@ function App() {
                       send();
                     }
                   }}
-                  placeholder="Message Zenoxi…"
+                  placeholder={readyFiles.length ? "Ask about your file…" : webSearch ? "Search the web…" : "Message Zenoxi…"}
                   aria-label="Message Zenoxi"
                   rows={1}
                   disabled={loading}
@@ -796,9 +1079,9 @@ function App() {
                   type="submit"
                   aria-label="Send message"
                   title="Send message"
-                  disabled={!input.trim() || loading}
-                  whileHover={input.trim() && !loading ? { scale: 1.06 } : undefined}
-                  whileTap={input.trim() && !loading ? { scale: 0.9, rotate: -8 } : undefined}
+                  disabled={!canSend}
+                  whileHover={canSend ? { scale: 1.06 } : undefined}
+                  whileTap={canSend ? { scale: 0.9, rotate: -8 } : undefined}
                 >
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
@@ -821,6 +1104,7 @@ function App() {
               <span>Check important details before relying on them.</span>
             </p>
           </form>
+          </>)}
         </main>
 
         <AnimatePresence>

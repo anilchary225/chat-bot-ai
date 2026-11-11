@@ -1,0 +1,10 @@
+$greeting
+
+$intro
+
+Your code: $code
+
+It expires in $minutes minutes. Never share this code: Zenoxi will never ask you for it.
+If you didn't request it, you can safely ignore this email.
+
+Zenoxi · $app_url

@@ -30,10 +30,31 @@ function CodeBlock({ node, children, ...props }) {
   );
 }
 
-function Markdown({ children, streaming }) {
+function Link({ node, title, children, ...props }) {
+  if (title === "zenoxi-cite") {
+    return <a {...props} className="cite" target="_blank" rel="noopener noreferrer">{children}</a>;
+  }
+  return <a {...props} title={title} target="_blank" rel="noopener noreferrer">{children}</a>;
+}
+
+const components = { pre: CodeBlock, a: Link };
+
+/** Turn "[2]" citations into links to the matching web source. */
+function linkCitations(text, sources) {
+  if (!sources?.length) return text;
+  return text.replace(/\[(\d{1,2})\](?![(\[])/g, (match, n) => {
+    const source = sources[Number(n) - 1];
+    const url = source?.url.replace(/[()\s<>"]/g, (c) => encodeURIComponent(c));
+    return source ? `[${n}](${url} "zenoxi-cite")` : match;
+  });
+}
+
+function Markdown({ children, streaming, sources }) {
   return (
     <div className={`markdown-body ${streaming ? "streaming" : ""}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: CodeBlock }}>{children}</ReactMarkdown>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+        {linkCitations(children, sources)}
+      </ReactMarkdown>
     </div>
   );
 }
