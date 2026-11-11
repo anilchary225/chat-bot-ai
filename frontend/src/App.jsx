@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Bot, Plus, MessageSquare, Trash2, Send, PanelLeftClose,
-  PanelLeftOpen, Sparkles, LoaderCircle, Copy, Check, AlertCircle, Menu, X
+  PanelLeftOpen, Sparkles, LoaderCircle, Copy, Check, AlertCircle, Menu, X, Sun, Moon
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,12 +17,19 @@ function App() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth > 700);
+  const [theme, setTheme] = useState(() => localStorage.getItem("zenoxi-theme") || "light");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
   const deleteDialogRef = useRef(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("zenoxi-theme", theme);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#f5f7f8" : "#111719");
+  }, [theme]);
 
   useEffect(() => {
     const breakpoint = window.matchMedia("(max-width: 700px)");
@@ -301,7 +308,18 @@ function App() {
             <span className="topbar-brand"><img src="/zenoxi-logo.png" alt="" aria-hidden="true" /> Zenoxi</span>
             <span className="current-chat-title">{activeChat?.title || "New chat"}</span>
           </div>
-          <div className="topbar-status"><span className="status-dot" /> AI chat</div>
+          <div className="topbar-actions">
+            <div className="topbar-status"><span className="status-dot" /> AI chat</div>
+            <button
+              className="theme-toggle"
+              type="button"
+              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+              aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+              title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            >
+              {theme === "light" ? <Moon size={17} /> : <Sun size={17} />}
+            </button>
+          </div>
         </header>
 
         <section className="conversation">
