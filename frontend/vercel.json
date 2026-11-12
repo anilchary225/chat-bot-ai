@@ -3,15 +3,15 @@
   "rewrites": [
     {
       "source": "/admin",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/agents",
-      "destination": "/index.html"
+      "destination": "/"
     },
     {
       "source": "/resume",
-      "destination": "/index.html"
+      "destination": "/"
     }
   ]
 }
