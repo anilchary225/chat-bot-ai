@@ -276,7 +276,7 @@ All need the owner's bearer token. An owner only sees their own agents (max 5).
 
 **Avatar, language and emails** in `settings`: `avatar` `{ type: orb|initials|emoji|image, emoji }`, `language`
 (`en`/`hi`/`te`/`ta`), and `emails` `{ notify_owner, owner_email, visitor_confirmation, confirmation_subject,
-confirmation_body, send_documents, followup: { enabled, after_days, subject, body }, report: off|daily|weekly }`.
+confirmation_body, send_documents, followup: { enabled, days, subject, body }, report: off|daily|weekly }`.
 Templates can use `{name}`, `{business}` and any form field key.
 
 **`settings` object:** `welcome_message`, `color` (`#rrggbb`), `position` (`left`/`right`), `tone`, `suggested_questions[]`
@@ -308,12 +308,20 @@ the server already runs them every 30 minutes when `BACKGROUND_JOBS=true`.
 ## Admin
 
 Only for users whose email is in `ADMIN_EMAILS`; everyone else gets `403`. `GET /api/auth/me` includes `is_admin`.
+You can't block or delete your own account or another admin.
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/admin/overview` | Counts: users, agents (live, disabled), leads (today, total), visitor messages today, daily limit. |
-| `GET /api/admin/agents` | Every agent with owner email, domains, status, messages today and lead count. |
+| `GET /api/admin/overview` | Users (total, new and signed in today, blocked), chats, agents, leads, visitor messages, free answers, failed emails today, and a 14-day `series`. |
+| `GET /api/admin/users?q=&skip=` | 50 users at a time (search by name or email): chats, agents, last sign-in, `blocked`, `is_admin`. |
+| `GET /api/admin/users/{id}` | One user: message, document and session counts, recent chats, agents. |
+| `POST /api/admin/users/{id}/block` | `{ "blocked": true|false }`. Blocking signs them out, refuses sign-in (`403`) and pauses their agents; unblocking restarts only the agents the block paused. |
+| `DELETE /api/admin/users/{id}` | Deletes the account with its chats, messages, documents, agents, leads and sessions (for deletion requests). |
+| `GET /api/admin/agents?q=&status=live|draft|disabled` | Every agent with owner, domains, messages today and over 7 days, free answers, emails today, leads, own-key flag. |
 | `POST /api/admin/agents/{id}/status` | `{ "disabled": true|false }`: disabled agents stop working everywhere. |
+| `GET /api/admin/emails?status=sent|logged|failed|skipped` | The latest 200 agent emails, with errors. |
+| `GET /api/admin/system` | Which services are configured (never their values), last scheduled-job run, limits, admin emails. |
+| `POST /api/admin/jobs/run` | Runs due reports and follow-ups now. |
 
 ## Messaging webhooks (called by Meta)
 

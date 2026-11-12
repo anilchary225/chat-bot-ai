@@ -19,7 +19,10 @@ All notable changes to Zenoxi are listed here. The format follows
   chat history and reply length caps.
 - **Load balancing:** `deploy/nginx` runs several API copies behind nginx; scheduled jobs use a MongoDB lock so they
   run once.
-- Admin dashboard for platform admins (`ADMIN_EMAILS`): usage overview and disabling agents.
+- Admin dashboard for platform admins (`ADMIN_EMAILS`) at `/admin`: overview with a 14-day chart, users (search,
+  details, block, delete with all data), agents (filters, usage, disable), platform email log, system health and
+  "Run jobs now". Blocked users can't sign in and their agents pause.
+- Direct links `/admin`, `/agents` and `/resume`.
 - Safe website reader with SSRF protection and robots.txt support.
 - Full documentation set: user guide, architecture, API reference, configuration, deployment, development,
   troubleshooting, security policy, contributing guide and this changelog.

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   BarChart3, Bot, Check, Download, FileSpreadsheet, HelpCircle, ImagePlus, Inbox, KeyRound, LoaderCircle, Mail,
@@ -217,29 +218,32 @@ export function LeadsTab({ apiBase, agent, onError }) {
           </tbody>
         </table></div>
       )}
+      {createPortal(
       <AnimatePresence>
-        {open && (
-          <motion.div className="modal-backdrop ld-drawer-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={(e) => { if (e.target === e.currentTarget) setOpen(null); }}>
-            <motion.aside className="ld-drawer" initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 40, opacity: 0 }} transition={spring}>
-              <div className="ld-drawer-head"><h3>{open.fields.name || "Lead"}</h3><button type="button" className="icon-btn" aria-label="Close" onClick={() => setOpen(null)}><X size={16} /></button></div>
-              <dl className="ld-fields">{Object.entries(open.fields).map(([k, v]) => <div key={k}><dt>{label(k)}</dt><dd>{v}</dd></div>)}
-                <div><dt>Page</dt><dd>{open.page_url || "—"}</dd></div><div><dt>Consent</dt><dd>{open.consent ? "Yes" : "No"}</dd></div></dl>
-              {open.summary && <p className="ld-summary"><Sparkles size={14} /> {open.summary}</p>}
-              <label className="pf-f"><span>Status</span>
-                <select value={open.status} onChange={(e) => patch(open, { status: e.target.value })}>{STATUSES.map(([s, l]) => <option key={s} value={s}>{l}</option>)}</select></label>
-              <label className="pf-f"><span>Notes</span>
-                <textarea rows={3} defaultValue={open.notes} onBlur={(e) => e.target.value !== open.notes && patch(open, { notes: e.target.value })} placeholder="Called on Monday, wants weekend batch…" /></label>
-              <h4 className="ld-conv-title">Conversation</h4>
-              <div className="ld-conv">
-                {!open.conversation_id && <em>No chat before this inquiry.</em>}
-                {open.conversation_id && !conversation && <LoaderCircle size={16} className="spin" />}
-                {conversation?.messages?.map((m, i) => <div key={i} className={`ld-msg ${m.role}`}>{m.role === "assistant" ? <Markdown>{m.content}</Markdown> : m.content}</div>)}
-              </div>
-              <button type="button" className="rt-ghost adm-danger" onClick={() => remove(open)}><Trash2 size={14} /> Delete lead</button>
-            </motion.aside>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          {open && (
+            <motion.div className="modal-backdrop ld-drawer-bg" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={(e) => { if (e.target === e.currentTarget) setOpen(null); }}>
+              <motion.aside className="ld-drawer" initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 40, opacity: 0 }} transition={spring}>
+                <div className="ld-drawer-head"><h3>{open.fields.name || "Lead"}</h3><button type="button" className="icon-btn" aria-label="Close" onClick={() => setOpen(null)}><X size={16} /></button></div>
+                <dl className="ld-fields">{Object.entries(open.fields).map(([k, v]) => <div key={k}><dt>{label(k)}</dt><dd>{v}</dd></div>)}
+                  <div><dt>Page</dt><dd>{open.page_url || "—"}</dd></div><div><dt>Consent</dt><dd>{open.consent ? "Yes" : "No"}</dd></div></dl>
+                {open.summary && <p className="ld-summary"><Sparkles size={14} /> {open.summary}</p>}
+                <label className="pf-f"><span>Status</span>
+                  <select value={open.status} onChange={(e) => patch(open, { status: e.target.value })}>{STATUSES.map(([s, l]) => <option key={s} value={s}>{l}</option>)}</select></label>
+                <label className="pf-f"><span>Notes</span>
+                  <textarea rows={3} defaultValue={open.notes} onBlur={(e) => e.target.value !== open.notes && patch(open, { notes: e.target.value })} placeholder="Called on Monday, wants weekend batch…" /></label>
+                <h4 className="ld-conv-title">Conversation</h4>
+                <div className="ld-conv">
+                  {!open.conversation_id && <em>No chat before this inquiry.</em>}
+                  {open.conversation_id && !conversation && <LoaderCircle size={16} className="spin" />}
+                  {conversation?.messages?.map((m, i) => <div key={i} className={`ld-msg ${m.role}`}>{m.role === "assistant" ? <Markdown>{m.content}</Markdown> : m.content}</div>)}
+                </div>
+                <button type="button" className="rt-ghost adm-danger" onClick={() => remove(open)}><Trash2 size={14} /> Delete lead</button>
+              </motion.aside>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }

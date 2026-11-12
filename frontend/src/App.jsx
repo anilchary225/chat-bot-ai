@@ -203,7 +203,8 @@ function App({ user, onSignOut }) {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [query, setQuery] = useState("");
   const [attachments, setAttachments] = useState([]);
-  const [view, setView] = useState("chat");
+  // Direct addresses: /admin, /agents and /resume open those views.
+  const [view, setView] = useState(() => ({ "/admin": "admin", "/agents": "agents", "/resume": "resume" })[window.location.pathname] || "chat");
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
   const dragDepth = useRef(0);
@@ -279,6 +280,20 @@ function App({ user, onSignOut }) {
     }
     refreshChats().catch(() => setError("Couldn't connect to Zenoxi. Check your connection and try again."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    // Keep the address bar in step with the open view (so /admin can be bookmarked).
+    const path = view === "chat" ? "/" : `/${view}`;
+    if (window.location.pathname !== path) {
+      window.history.pushState(null, "", path);
+    }
+  }, [view]);
+
+  useEffect(() => {
+    const onBack = () => setView(({ "/admin": "admin", "/agents": "agents", "/resume": "resume" })[window.location.pathname] || "chat");
+    window.addEventListener("popstate", onBack);
+    return () => window.removeEventListener("popstate", onBack);
   }, []);
 
   const scrollToBottom = (behavior = "smooth") => {

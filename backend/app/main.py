@@ -16,7 +16,8 @@ from pydantic import BaseModel, Field
 
 from . import resume as resume_tool
 from .auth import current_user, router as auth_router
-from .agents import admin_router, owner_router, public_router
+from .admin import admin_router
+from .agents import owner_router, public_router
 from .agent_extras import background_loop, cron_router, owner_x, public_x
 from .channels import router as channels_router, channel_config
 from .chat_core import (
@@ -86,7 +87,7 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-app = FastAPI(title="Zenoxi API", version="0.4.0", lifespan=lifespan)
+app = FastAPI(title="Zenoxi API", version="0.5.0", lifespan=lifespan)
 
 APP_ORIGINS = list(dict.fromkeys([
     settings.frontend_origin,

@@ -47,6 +47,7 @@ important request.
 | `resume.py` | ATS analysis (keywords, formatting checks), AI tailoring prompt, one-page PDF and DOCX rendering. |
 | `agents.py` | Website Agents: owner endpoints (interview, profile, knowledge, settings, test, leads), the public widget API (domain checks, rate limits, inquiries) and admin endpoints. |
 | `agent_extras.py` | Website Agents Phase 2/3: lead management, Excel/CSV export, emails (alerts, confirmations with brochures, follow-ups, reports), avatars, owner AI keys, analytics, unanswered inbox, scheduled jobs. |
+| `admin.py` | Platform admin API: overview and activity, users (block, delete), agents, email log, system health, run jobs. |
 | `agent_tokens.py` | Token savers: instant FAQ answers and the answer cache. |
 | `webreader.py` | Reads a few pages of a public website as text, refusing private addresses (SSRF protection) and honouring robots.txt. |
 | `openrouter.py` | Streaming and non-streaming OpenRouter clients. |
@@ -57,7 +58,7 @@ important request.
 
 | Collection | Key fields | Notes |
 |---|---|---|
-| `users` | `email` (unique), `name`, `google_sub` (unique, sparse), `picture`, `created_at`, `last_login` | Created on first successful sign-in. |
+| `users` | `email` (unique), `name`, `google_sub` (unique, sparse), `picture`, `created_at`, `last_login`, `blocked` | Created on first successful sign-in. Blocked users can't sign in. |
 | `sessions` | `_id` = HMAC hash of the token, `user_id`, `expires_at` | 30-day sessions; TTL index deletes expired ones. The raw token is never stored. |
 | `email_codes` | `_id` = email, `code_hash`, `purpose`, `attempts`, `sent_at`, `sends[]`, `expires_at` | One pending code per email; TTL after 10 minutes. |
 | `chats` | `title`, `owner_id`, `access_key`, `channels[]`, `created_at`, `updated_at` | `owner_id` is the signed-in user. `access_key` exists for chats linked to or started on a messaging app. |
@@ -75,6 +76,7 @@ important request.
 | `agent_emails` | `agent_id`, `lead_id`, `kind`, `to`, `status`, `error` | Email log. |
 | `agent_unanswered` | `agent_id`, `question`, `count`, `last_at` | Questions the agent couldn't answer. |
 | `agent_unsubscribes` | `_id` = `"<agent id>:<email>"` | Visitors who opted out of emails. |
+| `system_status` | `_id` = `"jobs"`, `last_run`, `result`, `source` | Last scheduled-job run, shown in the admin System tab. |
 | `job_locks` | `_id` = job + 30-minute slot | Makes scheduled jobs run once across several server copies; TTL 24 h. |
 | `channel_events` | `_id` = `"wa:<message id>"` / `"ig:<message id>"` | De-duplicates Meta webhook retries; TTL after 7 days. |
 

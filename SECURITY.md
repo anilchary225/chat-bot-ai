@@ -37,7 +37,7 @@ You'll get a reply within 7 days. Please give a reasonable time to fix the issue
 - **`/web` links work for the first claimer:** if a link leaks before the owner opens it, someone else could claim the
   chat.
 - **Widget origin checks stop browsers, not scripts:** a script can send any `Origin`, so rate limits and the daily cap are what protect the AI quota.
-- **No admin tools for account deletion yet:** account deletion requests are handled manually by email.
+- **Admin actions are logged to the server log only** (who blocked, deleted or disabled what); there is no in-app audit trail yet.
 
 ## Operational checklist
 

@@ -73,6 +73,20 @@ Telugu, Tamil) and, optionally, add your own OpenRouter key. Each agent handles 
 Zenoxi's AI, or 2,000 with your own key. To share a brochure, upload it in **Knowledge** and turn on **Email to
 visitors**.
 
+## Admin dashboard (platform admins only)
+
+Open **Admin** in the sidebar, or go straight to `/admin`. Only emails listed in `ADMIN_EMAILS` see it.
+
+| Tab | What you can do |
+|---|---|
+| **Overview** | Users, chats, agents, leads, visitor messages and free answers, with a 14-day chart. A warning appears when emails failed today. |
+| **Users** | Search users, open one to see their chats and agents, **block** (signs them out and pauses their agents) or **delete** the account and all its data (type their email to confirm). |
+| **Agents** | Every website agent with owner, domains and usage; filter by live, draft or disabled; disable or enable one. |
+| **Emails** | All emails sent by agents; filter failed ones and see why (for example Brevo's IP allow-list). |
+| **System** | Which services are configured, when scheduled jobs last ran, and **Run now**. |
+
+Direct links: `/admin`, `/agents` (Website Agents) and `/resume` (Resume ATS Match).
+
 ## One chat on the website, Instagram and WhatsApp
 
 **Continue a website chat in Instagram or WhatsApp:**

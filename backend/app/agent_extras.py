@@ -555,8 +555,15 @@ async def send_report(agent: dict, period_days: int) -> str:
     return status
 
 
-async def run_due_jobs() -> dict:
+async def run_due_jobs(source: str = "loop") -> dict:
     """Send due lead reports and follow-up emails. Safe to call often."""
+    done = await _run_due_jobs()
+    await get_db().system_status.update_one({"_id": "jobs"}, {"$set": {"last_run": now(), "result": done, "source": source}},
+                                            upsert=True)
+    return done
+
+
+async def _run_due_jobs() -> dict:
     db = get_db()
     done = {"reports": 0, "followups": 0}
     async for agent in db.agents.find({}):
@@ -596,7 +603,7 @@ async def cron_run(x_cron_secret: str | None = Header(None)):
     """For an external scheduler (e.g. a free cron service) when the server sleeps between requests."""
     if not settings.cron_secret or not x_cron_secret or not hmac.compare_digest(settings.cron_secret, x_cron_secret):
         raise HTTPException(status_code=403, detail="Forbidden")
-    return await run_due_jobs()
+    return await run_due_jobs(source="cron")
 
 
 @owner_x.post("/{agent_id}/report/send")

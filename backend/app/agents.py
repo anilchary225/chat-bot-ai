@@ -8,7 +8,7 @@ Roles
 Routers
   owner_router  /api/agents/...          (bearer token)
   public_router /api/public/agents/...   (no login; Origin + rate limited; open CORS)
-  admin_router  /api/admin/...           (admin only)
+  admin endpoints live in admin.py (/api/admin/...)
 """
 import asyncio
 import json
@@ -35,7 +35,6 @@ from .webreader import WebReadError, read_website
 logger = logging.getLogger("zenoxi.agents")
 owner_router = APIRouter(prefix="/api/agents")
 public_router = APIRouter(prefix="/api/public/agents")
-admin_router = APIRouter(prefix="/api/admin")
 
 MAX_SOURCES = 40
 KNOWLEDGE_BUDGET = 6_000          # characters of knowledge per answer (broad questions get BROAD_BUDGET)
@@ -983,48 +982,3 @@ async def widget_lead(public_key: str, payload: LeadSubmission, request: Request
     from .agent_extras import process_new_lead
     background.add_task(process_new_lead, agent["_id"], lead["_id"])
     return {"ok": True, "message": form.get("success_message")}
-
-
-# ---------------------------------------------------------------- admin
-
-@admin_router.get("/overview")
-async def admin_overview(user: dict = Depends(admin_user)):
-    db = get_db()
-    day = now().strftime("%Y-%m-%d")
-    usage_today = [u async for u in db.agent_usage.find({"day": day})]
-    return {
-        "users": await db.users.count_documents({}),
-        "agents": await db.agents.count_documents({}),
-        "agents_live": await db.agents.count_documents({"status": "live"}),
-        "agents_disabled": await db.agents.count_documents({"disabled": True}),
-        "leads_total": await db.agent_leads.count_documents({}),
-        "messages_today": sum(u.get("messages", 0) for u in usage_today),
-        "leads_today": sum(u.get("leads", 0) for u in usage_today),
-        "daily_message_limit": settings.agent_daily_messages,
-    }
-
-
-@admin_router.get("/agents")
-async def admin_agents(user: dict = Depends(admin_user)):
-    db = get_db()
-    day = now().strftime("%Y-%m-%d")
-    rows = []
-    async for a in db.agents.find({}).sort("created_at", -1).limit(500):
-        owner = await db.users.find_one({"_id": a.get("owner_id")}) or {}
-        usage = await db.agent_usage.find_one({"_id": f"{a['_id']}:{day}"}) or {}
-        rows.append({
-            "id": str(a["_id"]), "name": a["name"], "business_name": a["business_name"], "owner_email": owner.get("email"),
-            "status": a.get("status"), "disabled": bool(a.get("disabled")), "allowed_domains": a.get("allowed_domains", []),
-            "messages_today": usage.get("messages", 0), "leads": await db.agent_leads.count_documents({"agent_id": a["_id"]}),
-            "created_at": aware(a["created_at"]).isoformat(),
-        })
-    return rows
-
-
-@admin_router.post("/agents/{agent_id}/status")
-async def admin_set_status(agent_id: str, payload: AdminStatus, user: dict = Depends(admin_user)):
-    result = await get_db().agents.update_one({"_id": oid(agent_id)}, {"$set": {"disabled": payload.disabled, "updated_at": now()}})
-    if not result.matched_count:
-        raise HTTPException(status_code=404, detail="Agent not found")
-    logger.warning("Admin %s set agent %s disabled=%s", user["email"], agent_id, payload.disabled)
-    return {"ok": True, "disabled": payload.disabled}

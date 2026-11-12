@@ -29,6 +29,7 @@
 | 💼 | **Resume ATS Match** | Scores a resume against a job description, lists missing keywords and formatting issues, and generates a tailored one-page resume (PDF/DOCX) without inventing experience. |
 | 🤖 | **Website Agents** | Businesses build their own AI assistant by chatting with Zenoxi, then add a floating chat widget to their website that answers from their information and collects inquiries. Owners get a leads dashboard with Excel export, email alerts and confirmations (with brochures), reports, analytics, avatars and a Hindi/Telugu/Tamil widget. |
 | 🔁 | **One chat everywhere** | Continue the same conversation on the website, Instagram DMs and WhatsApp, with link codes and live sync. |
+| 🛡️ | **Admin dashboard** | For the platform owner at `/admin`: users (block, delete), agents, email log, system health and 14-day activity. |
 | 🔐 | **Accounts** | "Continue with Google" or passwordless sign-in with a 6-digit email code. Every user only sees their own chats. |
 | 🎨 | **Animated UI** | React + Framer Motion interface with light/dark themes, a mobile layout and an animated orb assistant. |
 
@@ -97,7 +98,7 @@ API docs (Swagger UI) are served at http://127.0.0.1:8000/docs.
 
 ## Project status
 
-Zenoxi is in active development (version 0.3.0). The website is live for everyone. Instagram works for accounts added as
+Zenoxi is in active development (version 0.5.0). The website is live for everyone. Instagram works for accounts added as
 testers, and WhatsApp needs Meta business verification before real messages are delivered
 (see [Messaging setup](docs/MESSAGING_SETUP.md#going-live-for-everyone)).
 

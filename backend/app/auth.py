@@ -140,6 +140,8 @@ async def verify(payload: VerifyRequest):
 
 
 async def start_session(db, user: dict, extra: dict | None = None) -> dict:
+    if user.get("blocked"):
+        raise HTTPException(status_code=403, detail="This account has been blocked. Contact support if this is a mistake.")
     await db.users.update_one({"_id": user["_id"]}, {"$set": {"last_login": now(), "verified": True, **(extra or {})}})
     token = secrets.token_urlsafe(32)
     await db.sessions.insert_one({
@@ -196,6 +198,8 @@ async def current_user(authorization: str | None = Header(None)) -> dict:
     user = await db.users.find_one({"_id": session["user_id"]})
     if not user:
         raise HTTPException(status_code=401, detail="Sign in to continue.")
+    if user.get("blocked"):
+        raise HTTPException(status_code=403, detail="This account has been blocked. Contact support if this is a mistake.")
     return user
 
 
