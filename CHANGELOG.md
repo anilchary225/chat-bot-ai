@@ -5,6 +5,8 @@ All notable changes to Zenoxi are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-12
+
 ### Added
 - **Website Agents (Phase 1):** owners create a website assistant by chatting with Zenoxi (website reading +
   interview + editable business profile), add knowledge (pages, files, notes), customize the look and inquiry form,
@@ -23,9 +25,26 @@ All notable changes to Zenoxi are listed here. The format follows
   details, block, delete with all data), agents (filters, usage, disable), platform email log, system health and
   "Run jobs now". Blocked users can't sign in and their agents pause.
 - Direct links `/admin`, `/agents` and `/resume`.
+- Replies in the user's language (Telugu, Hindi, Tamil and others, including those typed in English letters) in the
+  main chat and in Website Agents.
+- "Check your Spam or Promotions folder" notes on the sign-in code screen and in the widget after an inquiry with
+  a confirmation email.
 - Safe website reader with SSRF protection and robots.txt support.
 - Full documentation set: user guide, architecture, API reference, configuration, deployment, development,
   troubleshooting, security policy, contributing guide and this changelog.
+
+### Changed
+- Email logos (sign-in codes and Website Agent emails) are drawn with HTML instead of an image, so they show even
+  when email apps block images; agent emails start with the business's initial and name.
+- "Continue with Google" uses Google's white outline button with the logo next to the text, in both themes.
+
+### Fixed
+- **Admin** now appears right after sign-in (the sign-in response includes `is_admin`), not only after a reload.
+- `/admin`, `/agents` and `/resume` returned 404 on Vercel; the rewrites now point to `/`.
+- Questions written in Telugu, Hindi or Tamil script no longer get a cached English answer; they always go to the AI.
+- Preview (test) inquiries only email the owner's own address, never the address typed into the form.
+- Lead and user drawers open at the right edge of the screen instead of inside the page.
+- Default form texts (title, field labels, button, thank-you) are translated when the widget language isn't English.
 
 ## [0.3.0] - 2026-11-11
 

@@ -12,11 +12,19 @@ Problems seen while building and running Zenoxi, with their causes and fixes.
 | Blank white page after an action | A component crashed, or an exit animation stalled | Check the browser console; see the `AnimatePresence` note in [Development](DEVELOPMENT.md#conventions). |
 | "OpenRouter's free usage limit was reached" | About 50 free requests a day | Wait for the reset, or add credit to OpenRouter. |
 | Signed out unexpectedly | Session expired (30 days) or `AUTH_SECRET` changed | Sign in again. |
+| `/admin`, `/agents` or `/resume` shows Vercel's 404 page | Rewrites point to `/index.html`, which clean URLs redirect | In `frontend/vercel.json` the rewrite destination must be `/`. |
+| **Admin** missing from the sidebar | Email not in `ADMIN_EMAILS`, Render not redeployed yet, or an old version without the sign-in fix | Set `ADMIN_EMAILS` to the exact sign-in email, wait for the redeploy, then reload the page. |
 
 ## Sign-in
 
 | Symptom | Cause | Fix |
 |---|---|---|
+| "Couldn't send the email right now" | Brevo refused the email; the Render log shows the reason | Search the Render log for `Brevo rejected`. |
+| Log: `Brevo rejected the email: 401 … unrecognised IP address` | Brevo's **Authorised IPs** blocking is on and Render's IP changes | Brevo → Security → Authorised IPs → **Deactivate for API keys**. |
+| Log shows `200 OK` for `request-code` but no email arrived | Delivered to spam, or the sender isn't verified | Check Spam/Promotions; check Brevo → Transactional → Logs; verify `MAIL_FROM` in Brevo → Senders. |
+| Emails always land in spam | Sending from a free address (Gmail) through Brevo | Authenticate your own domain in Brevo and send from it (see [Deployment](DEPLOYMENT.md#5-email-for-sign-in-codes)). |
+| Sign-in says "No account with this email yet" (`404`) | That email never signed up | Use **Sign up**, or **Continue with Google** with the same address. |
+| "This account has been blocked" (`403`) | An admin blocked the account | An admin can unblock it in **Admin → Users**. |
 | No code email | No email provider configured, wrong sender, or spam folder | Check spam; set `BREVO_API_KEY` + `MAIL_FROM`; locally, read the code in the backend log. |
 | Brevo rejects mail | `MAIL_FROM` not a verified sender, or it's set to `smtp-relay.brevo.com` | Verify the sender in Brevo and set `MAIL_FROM` to that **email address**. |
 | SMTP times out on Render | Render's free plan blocks ports 25/465/587 | Use Brevo's HTTP API instead. |
@@ -33,6 +41,18 @@ Problems seen while building and running Zenoxi, with their causes and fixes.
 | "Couldn't read this Word file" | Old `.doc` format | Save as `.docx`. |
 | Resume tailoring fails | The free model returned invalid JSON twice, or the quota ran out | Try again later; check the OpenRouter limit. |
 | Resume PDF says "longer than 1 page" | Very long resume even at the smallest scale | Shorten bullets or project descriptions. |
+
+## Website Agents and scheduled jobs
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Widget doesn't appear on the owner's site | The site's domain isn't in the agent's allowed domains, or the agent is still a draft | Add the domain in **Install** and tap **Go live**. |
+| Widget says the assistant is unavailable | Agent disabled by an admin, or its owner is blocked | Check **Admin → Agents**. |
+| Lead emails show `failed` in the email log | Brevo IP blocking or an unverified sender | See the Sign-in rows above; the admin **Emails** tab shows the exact error. |
+| Reports or follow-ups never arrive | The server sleeps on Render's free plan, so the 30-minute loop doesn't run | Set up cron-job.org (see [Deployment](DEPLOYMENT.md#5c-scheduled-jobs-lead-reports-and-follow-ups)); check **Admin → System → Last run**. |
+| cron-job.org test returns `403` | The `X-Cron-Secret` header doesn't match `CRON_SECRET` | Paste the same value in both, with no spaces. |
+| cron-job.org test returns `405` | Request method left as GET | Set **POST** in the Advanced tab. |
+| Agent replies in English to a Telugu question | Very short mixed messages can be ambiguous to the free model | Ask in a full sentence; the prompt tells the agent to reply in the visitor's language. |
 
 ## WhatsApp and Instagram
 

@@ -6,7 +6,8 @@ Zenoxi is an AI assistant you can use on the website, in Instagram DMs and on Wh
 
 1. Open **https://zenoxi.vercel.app**.
 2. Choose **Continue with Google**, or enter your email and tap **Send code**.
-3. Type the 6-digit code from your inbox (check spam). Codes expire after 10 minutes.
+3. Type the 6-digit code from your inbox. Not there? Check your **Spam** or **Promotions** folder. Codes expire
+   after 10 minutes; tap **Send a new code** for another.
 
 No password is needed. To sign out, use the button next to your name at the bottom of the sidebar.
 
@@ -17,6 +18,9 @@ No password is needed. To sign out, use the button next to your name at the bott
 - Your chats are in the sidebar, grouped by date. Use **Search chats** to find one, and the trash icon to delete it.
 - **Copy** under an answer copies it; code blocks have their own Copy button.
 - Switch light/dark mode with the sun/moon button at the top right.
+
+- Write in any language: Zenoxi replies in the language you use, including Telugu, Hindi or Tamil typed in English
+  letters (for example *"python ante enti?"*).
 
 > AI answers can be wrong. Check important facts.
 
@@ -67,6 +71,9 @@ The score is an estimate; every company's ATS works a little differently. Your r
    brochure if they ask for it), a follow-up after a few days, and a daily or weekly leads report. Visitors can always
    unsubscribe.
 10. **Analytics:** messages, leads, conversion, top questions, and how many answers were free.
+
+Visitors can ask in their own language; the agent replies the same way. When a visitor leaves their email and your
+confirmation email is on, the widget tells them it was sent and to check their Spam folder.
 
 **Customize** also lets you pick an avatar (orb, initials, emoji or your logo), the widget language (English, Hindi,
 Telugu, Tamil) and, optionally, add your own OpenRouter key. Each agent handles up to 100 visitor messages a day on

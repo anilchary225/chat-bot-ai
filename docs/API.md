@@ -72,9 +72,10 @@ more than 6 codes an hour · `502` email provider failed.
 ```
 **Response `200`:**
 ```json
-{ "token": "5mI2…", "user": { "id": "6af3…", "email": "asha@example.com", "name": "Asha", "picture": null } }
+{ "token": "5mI2…", "user": { "id": "6af3…", "email": "asha@example.com", "name": "Asha", "picture": null, "is_admin": false } }
 ```
-**Errors:** `400` wrong or expired code (the message says how many tries are left) · `429` five wrong attempts.
+**Errors:** `400` wrong or expired code (the message says how many tries are left) · `403` account blocked by an
+admin · `429` five wrong attempts.
 
 ### `POST /api/auth/google`
 ```json
@@ -84,7 +85,7 @@ Signs in or signs up. An existing account with the same verified email is reused
 **Response:** same as `/verify`. **Errors:** `401` invalid token or unverified email · `503` `GOOGLE_CLIENT_ID` not set.
 
 ### `GET /api/auth/me`
-**Response `200`:** the user object (`id`, `email`, `name`, `picture`).
+**Response `200`:** the user object (`id`, `email`, `name`, `picture`, `is_admin`). `403` if the account is blocked.
 
 ### `POST /api/auth/logout`
 Deletes the current session. **Response `200`:** `{ "ok": true }`
@@ -291,7 +292,7 @@ draft). Requests without an `Origin` are refused.
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/public/agents/{public_key}/config` | Widget settings: `name`, `business_name`, `welcome_message`, `color`, `position`, `suggested_questions`, `form`, `preview`. |
+| `GET /api/public/agents/{public_key}/config` | Widget settings: `name`, `business_name`, `welcome_message`, `color`, `position`, `suggested_questions`, `form`, `preview`, `avatar`, `language`, `documents` (shareable brochures), `confirm_email` (whether visitors get a confirmation email). |
 | `POST /api/public/agents/{public_key}/chat` | `{ visitor_id, conversation_id?, message, page_url? }` → NDJSON stream: `conversation` (id), `token`…, `final` `{content, show_form}` or `error`. |
 | `GET /api/public/agents/{public_key}/avatar` | The agent's logo (PNG, cached). |
 | `GET /api/public/unsubscribe?l=&t=` | Signed link in emails; stops further emails to that visitor from that agent. |

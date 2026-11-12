@@ -105,6 +105,9 @@ testers, and WhatsApp needs Meta business verification before real messages are 
 Saving AI tokens is built in (instant FAQ answers, an answer cache, trimmed context). To run several API copies
 behind nginx on your own server, see [deploy/nginx](deploy/nginx/README.md).
 
+Sign-in and agent emails go through Brevo. For best delivery, turn off Brevo's IP blocking and send from your own
+authenticated domain (see [Deployment](docs/DEPLOYMENT.md#5-email-for-sign-in-codes)).
+
 Free-tier limits apply: OpenRouter's free models allow about 50 requests a day, and Render's free plan sleeps after
 about 15 minutes idle (the first request then takes up to a minute).
 

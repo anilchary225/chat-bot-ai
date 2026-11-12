@@ -141,7 +141,7 @@ issuer.
 ### Saving AI tokens
 | Where | How |
 |---|---|
-| Website Agents | Questions that match a saved FAQ get the FAQ answer with no AI call. First questions are cached per agent for 7 days (cache cleared on any knowledge change). Knowledge budget 6,000 characters (10,000 for broad questions), last 6 turns, replies capped at 450 tokens. |
+| Website Agents | Questions that match a saved FAQ get the FAQ answer with no AI call. First questions are cached per agent for 7 days (cache cleared on any knowledge change). Knowledge budget 6,000 characters (10,000 for broad questions), last 6 turns, replies capped at 450 tokens. Questions with Telugu, Hindi, Tamil (or other non-Latin) letters skip the FAQ and cache. |
 | Web chat | History trimmed to 12,000 characters, older long replies shortened; documents get 8,000 characters for specific questions and the full `DOC_CONTEXT_CHARS` only for "summarize / whole document" questions; replies capped at 1,200 tokens (500 on WhatsApp/Instagram). |
 | Documents | Passages are ranked by matching question words with light stemming ("prices" matches "price"), so fewer, better passages are sent. |
 | Owners' own key | An owner can add an OpenRouter key; their agent then uses it (higher daily limit) instead of the shared quota. |
@@ -169,6 +169,9 @@ scale. Resume data is not stored.
 | Web search via HTTPS APIs only | Render's free plan blocks outbound SMTP and similar ports; HTTPS always works. |
 | Resume PDF rendered server-side | Exact one-page fitting needs real text measurement, which the browser can't guarantee for print. |
 | Documents stored as extracted text | Smaller, searchable, and avoids keeping original files that could contain personal data. |
+| Email logos drawn with HTML | Many email apps block remote images by default; an HTML/CSS logo always shows. |
+| Admin by email list, not a role in the database | `ADMIN_EMAILS` lives in the server's environment, so no API call or database edit can make someone an admin. |
+| Non-English questions skip the FAQ and answer cache | Matching uses English words only; skipping avoids replying with a cached English answer, and the model replies in the visitor's language. |
 
 ## Limits
 
