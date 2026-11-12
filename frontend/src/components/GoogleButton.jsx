@@ -41,11 +41,11 @@ export default function GoogleButton({ onCredential, onError, text = "continue_w
           ux_mode: "popup",
           use_fedcm_for_prompt: true,
         });
-        const dark = document.documentElement.dataset.theme === "dark";
         slot.current.innerHTML = "";
+        // White "outline" style in both themes: Google's cleanest button, and it reads well on the dark card too.
         window.google.accounts.id.renderButton(slot.current, {
           type: "standard",
-          theme: dark ? "filled_black" : "outline",
+          theme: "outline",
           size: "large",
           shape: "pill",
           text,

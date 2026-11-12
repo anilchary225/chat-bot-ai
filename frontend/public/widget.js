@@ -42,28 +42,32 @@
       intro: "Sure! I'll take a few details so the team can contact you. (Type cancel to stop.)", optional: "(optional, type skip)",
       contactQ: "Can the team contact you about this inquiry?", yes: "Yes, contact me", no: "No", cancelled: "No problem, cancelled. Ask me anything else!",
       emailMe: "Email me:", docsQ: "Want us to email you {d}?", yesSend: "Yes, send it", noThanks: "No thanks", wrong: "AI answers can be wrong",
-      failed: "Couldn't send. Please try again.", offline: "Couldn't reach the assistant. Check your connection.", open: "Open chat with", close: "Close chat" },
+      failed: "Couldn't send. Please try again.", offline: "Couldn't reach the assistant. Check your connection.", open: "Open chat with", close: "Close chat",
+      spam: "📬 We've emailed you a confirmation. Not in your inbox? Please check your Spam or Promotions folder." },
     hi: { placeholder: "अपना सवाल लिखें…", online: "ऑनलाइन · तुरंत जवाब", bubble: "नमस्ते! 👋 {b} के बारे में कुछ भी पूछें।",
       send: "पूछताछ भेजें", sending: "भेजा जा रहा है…", consent: "मैं इस पूछताछ के बारे में संपर्क किए जाने के लिए सहमत हूँ।", choose: "चुनें…",
       required: "ज़रूरी", email: "सही ईमेल लिखें", phone: "सही फ़ोन नंबर लिखें", option: "किसी एक विकल्प को चुनें",
       intro: "ज़रूर! टीम आपसे संपर्क कर सके, इसके लिए कुछ जानकारी लूँगा। (रोकने के लिए cancel लिखें)", optional: "(वैकल्पिक, skip लिखें)",
       contactQ: "क्या टीम इस पूछताछ के बारे में आपसे संपर्क कर सकती है?", yes: "हाँ, संपर्क करें", no: "नहीं", cancelled: "ठीक है, रद्द कर दिया। कुछ और पूछें!",
       emailMe: "मुझे ईमेल करें:", docsQ: "क्या हम आपको {d} ईमेल करें?", yesSend: "हाँ, भेजें", noThanks: "नहीं, धन्यवाद", wrong: "AI के जवाब गलत हो सकते हैं",
-      failed: "भेजा नहीं जा सका। फिर कोशिश करें।", offline: "असिस्टेंट से कनेक्ट नहीं हो पाया।", open: "चैट खोलें", close: "चैट बंद करें" },
+      failed: "भेजा नहीं जा सका। फिर कोशिश करें।", offline: "असिस्टेंट से कनेक्ट नहीं हो पाया।", open: "चैट खोलें", close: "चैट बंद करें",
+      spam: "📬 हमने आपको पुष्टि ईमेल भेजा है। इनबॉक्स में नहीं दिखा? कृपया Spam या Promotions फ़ोल्डर देखें।" },
     te: { placeholder: "మీ ప్రశ్న టైప్ చేయండి…", online: "ఆన్‌లైన్ · వెంటనే సమాధానం", bubble: "నమస్తే! 👋 {b} గురించి ఏదైనా అడగండి.",
       send: "విచారణ పంపండి", sending: "పంపుతున్నాం…", consent: "ఈ విచారణ గురించి నన్ను సంప్రదించడానికి నేను అంగీకరిస్తున్నాను.", choose: "ఎంచుకోండి…",
       required: "తప్పనిసరి", email: "సరైన ఇమెయిల్ ఇవ్వండి", phone: "సరైన ఫోన్ నంబర్ ఇవ్వండి", option: "ఒక ఆప్షన్ ఎంచుకోండి",
       intro: "తప్పకుండా! టీమ్ మిమ్మల్ని సంప్రదించడానికి కొన్ని వివరాలు తీసుకుంటాను. (ఆపడానికి cancel టైప్ చేయండి)", optional: "(ఐచ్ఛికం, skip టైప్ చేయండి)",
       contactQ: "ఈ విచారణ గురించి టీమ్ మిమ్మల్ని సంప్రదించవచ్చా?", yes: "అవును, సంప్రదించండి", no: "వద్దు", cancelled: "సరే, రద్దు చేశాను. ఇంకేమైనా అడగండి!",
       emailMe: "నాకు ఇమెయిల్ చేయండి:", docsQ: "మీకు {d} ఇమెయిల్ చేయాలా?", yesSend: "అవును, పంపండి", noThanks: "వద్దు, ధన్యవాదాలు", wrong: "AI సమాధానాలు తప్పు కావచ్చు",
-      failed: "పంపలేకపోయాం. మళ్లీ ప్రయత్నించండి.", offline: "అసిస్టెంట్‌కు కనెక్ట్ కాలేకపోయాం.", open: "చాట్ తెరవండి", close: "చాట్ మూసివేయండి" },
+      failed: "పంపలేకపోయాం. మళ్లీ ప్రయత్నించండి.", offline: "అసిస్టెంట్‌కు కనెక్ట్ కాలేకపోయాం.", open: "చాట్ తెరవండి", close: "చాట్ మూసివేయండి",
+      spam: "📬 మీకు నిర్ధారణ ఇమెయిల్ పంపాం. ఇన్‌బాక్స్‌లో కనిపించకపోతే, దయచేసి Spam లేదా Promotions ఫోల్డర్ చూడండి." },
     ta: { placeholder: "உங்கள் கேள்வியை தட்டச்சு செய்யவும்…", online: "ஆன்லைன் · உடனே பதில்", bubble: "வணக்கம்! 👋 {b} பற்றி எதையும் கேளுங்கள்.",
       send: "விசாரணை அனுப்பு", sending: "அனுப்புகிறது…", consent: "இந்த விசாரணை குறித்து என்னைத் தொடர்பு கொள்ள ஒப்புக்கொள்கிறேன்.", choose: "தேர்வு செய்க…",
       required: "அவசியம்", email: "சரியான மின்னஞ்சலை உள்ளிடவும்", phone: "சரியான தொலைபேசி எண்ணை உள்ளிடவும்", option: "ஒரு விருப்பத்தைத் தேர்வு செய்யவும்",
       intro: "நிச்சயமாக! குழு உங்களைத் தொடர்பு கொள்ள சில விவரங்களைப் பெறுகிறேன். (நிறுத்த cancel என தட்டச்சு செய்யவும்)", optional: "(விருப்பம், skip என தட்டச்சு செய்யவும்)",
       contactQ: "இந்த விசாரணை குறித்து குழு உங்களைத் தொடர்பு கொள்ளலாமா?", yes: "ஆம், தொடர்பு கொள்ளுங்கள்", no: "வேண்டாம்", cancelled: "சரி, ரத்து செய்யப்பட்டது. வேறு ஏதாவது கேளுங்கள்!",
       emailMe: "எனக்கு மின்னஞ்சல் செய்யவும்:", docsQ: "உங்களுக்கு {d} மின்னஞ்சல் செய்யட்டுமா?", yesSend: "ஆம், அனுப்பு", noThanks: "வேண்டாம், நன்றி", wrong: "AI பதில்கள் தவறாக இருக்கலாம்",
-      failed: "அனுப்ப முடியவில்லை. மீண்டும் முயற்சிக்கவும்.", offline: "உதவியாளரை அடைய முடியவில்லை.", open: "அரட்டையைத் திற", close: "அரட்டையை மூடு" },
+      failed: "அனுப்ப முடியவில்லை. மீண்டும் முயற்சிக்கவும்.", offline: "உதவியாளரை அடைய முடியவில்லை.", open: "அரட்டையைத் திற", close: "அரட்டையை மூடு",
+      spam: "📬 உங்களுக்கு உறுதிப்படுத்தல் மின்னஞ்சல் அனுப்பியுள்ளோம். இன்பாக்ஸில் இல்லையா? Spam அல்லது Promotions கோப்புறையைப் பார்க்கவும்." },
   };
   // Default form texts are saved in English; show them in the widget language unless the owner changed them.
   var DEFAULT_TEXT = {
@@ -435,7 +439,12 @@
       body: JSON.stringify({ visitor_id: visitorId, conversation_id: conversationId, fields: values, consent: consent, website: honeypot, documents: documents || [], page_url: location.href.slice(0, 500) }),
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (d) {
-        if (res.ok) done(true, tr(d.message || (config.form && config.form.success_message) || "Thanks! We'll be in touch."));
+        if (res.ok) {
+          var msg = tr(d.message || (config.form && config.form.success_message) || "Thanks! We'll be in touch.");
+          // A confirmation email goes out only when the owner turned it on and the visitor gave an email and consent.
+          if (config.confirm_email && consent && values.email) msg += "\n\n" + t("spam");
+          done(true, msg);
+        }
         else done(false, d.detail);
       });
     }).catch(function () { done(false, t("offline")); });

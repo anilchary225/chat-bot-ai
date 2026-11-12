@@ -892,6 +892,7 @@ async def widget_config(public_key: str, origin: str | None = Header(None)):
             {"agent_id": agent["_id"], "shareable": True}).sort("created_at", 1)]
     return {
         "avatar": avatar, "language": s.get("language", "en"), "documents": docs,
+        "confirm_email": bool((s.get("emails") or {}).get("visitor_confirmation")),
         "name": agent["name"], "business_name": agent["business_name"], "preview": preview,
         "welcome_message": s.get("welcome_message"), "color": s.get("color"), "position": s.get("position", "right"),
         "suggested_questions": s.get("suggested_questions", []),

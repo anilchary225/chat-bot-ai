@@ -360,6 +360,8 @@ kbd { padding: 1px 5px; font: 500 10.5px var(--font-mono); color: var(--muted); 
 .auth-card h2 { margin: 18px 0 6px; font: 600 26px var(--font-display); letter-spacing: -.6px; }
 .auth-sub { margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.55; }
 .auth-sub strong { color: var(--text); }
+.auth-spam { margin: -12px 0 18px; padding: 8px 12px; color: var(--muted); background: var(--surface-hover); border-radius: 10px; font-size: 12.5px; line-height: 1.5; }
+.auth-spam strong { color: var(--text); }
 .auth-tabs { display: flex; padding: 4px; background: var(--surface-hover); border-radius: 14px; }
 .auth-tabs button { position: relative; flex: 1; height: 38px; color: var(--muted); background: transparent; border: 0; border-radius: 11px; font-weight: 600; font-size: 14px; }
 .auth-tabs button.on { color: var(--text); }

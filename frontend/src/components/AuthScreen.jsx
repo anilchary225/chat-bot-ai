@@ -270,6 +270,7 @@ export default function AuthScreen({ api, onSignedIn }) {
                 </motion.div>
                 <h2>Check your email</h2>
                 <p className="auth-sub">Enter the 6-digit code we sent to <strong>{email.trim()}</strong>. It expires in 10 minutes.</p>
+                <p className="auth-spam">📬 Not in your inbox? Check your <strong>Spam</strong> or <strong>Promotions</strong> folder.</p>
                 <CodeInput value={code} onChange={setCode} onComplete={verify} disabled={busy} error={shake} key={shake} />
                 <AnimatePresence>
                   {error && (

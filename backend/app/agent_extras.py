@@ -87,15 +87,26 @@ def fill(template: str, values: dict) -> str:
     return re.sub(r"\{(\w+)\}", lambda m: str(values.get(m.group(1), "")), template or "")
 
 
-def email_html(title: str, body_html: str, color: str, footer_html: str) -> str:
+def brand_header(name: str, color: str) -> str:
+    """Business initial in a coloured circle + name, drawn with HTML so it shows even when images are blocked."""
+    initial = escape((name or "?").strip()[:1].upper() or "?")
+    return (f'<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto 16px"><tr>'
+            f'<td width="36" height="36" align="center" valign="middle" style="width:36px;height:36px;border-radius:50%;background:{color};'
+            f'font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;line-height:36px;color:#ffffff;text-align:center">{initial}</td>'
+            f'<td style="padding-left:10px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;color:#1f2937">{escape(name or "")}</td>'
+            f'</tr></table>')
+
+
+def email_html(title: str, body_html: str, color: str, footer_html: str, brand: str = "") -> str:
     return f"""<!doctype html><html><body style="margin:0;background:#f6f4f1;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:28px 12px">
-<table role="presentation" width="100%" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #ece6df">
+{brand_header(brand, color) if brand else ""}
+<table role="presentation" width="100%" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #ece6df;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
 <tr><td style="height:5px;background:{color}"></td></tr>
 <tr><td style="padding:26px 28px 8px;font-size:20px;font-weight:700">{escape(title)}</td></tr>
 <tr><td style="padding:6px 28px 24px;font-size:14.5px;line-height:1.6">{body_html}</td></tr>
 </table>
-<div style="max-width:560px;padding:14px 8px;font-size:12px;line-height:1.5;color:#8a8178">{footer_html}</div>
+<div style="max-width:560px;padding:14px 8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8a8178">{footer_html}</div>
 </td></tr></table></body></html>"""
 
 
@@ -193,7 +204,7 @@ async def process_new_lead(agent_id, lead_id) -> None:
             text = f"New inquiry for {agent['business_name']}\n\n" + "\n".join(f"{k}: {v}" for k, v in lead["fields"].items()) + (f"\n\nSummary: {summary}" if summary else "")
             visitor_email = lead["fields"].get("email")
             await deliver(agent, lead_id, to, "owner_alert", f"New inquiry: {values.get('name', 'website visitor')}",
-                          email_html("New inquiry 🎉", body, color, f"Sent by Zenoxi for {escape(agent['business_name'])}."),
+                          email_html("New inquiry 🎉", body, color, f"Sent by Zenoxi for {escape(agent['business_name'])}.", agent["business_name"]),
                           text, reply_to=visitor_email)
 
     visitor = lead["fields"].get("email")
@@ -215,7 +226,7 @@ async def process_new_lead(agent_id, lead_id) -> None:
         footer = (f"You're receiving this because you contacted {escape(agent['business_name'])} through their website. "
                   f'<a href="{unsub}" style="color:#8a8178">Unsubscribe</a>')
         await deliver(agent, lead_id, visitor, "visitor_confirmation", subject,
-                      email_html(subject, text_to_html(text_body), color, footer),
+                      email_html(subject, text_to_html(text_body), color, footer, agent["business_name"]),
                       text_body + f"\n\nUnsubscribe: {unsub}", reply_to=await owner_address(agent), attachments=attachments)
 
 
@@ -547,7 +558,7 @@ async def send_report(agent: dict, period_days: int) -> str:
     body = (f"<p><b>{len(recent)}</b> new lead{'s' if len(recent) != 1 else ''} {label} for <b>{escape(agent['business_name'])}</b>.</p>"
             f"<p>The attached Excel file has all {len(rows)} leads, with status and notes.</p>")
     status = await deliver(agent, None, to, "report", f"{agent['business_name']}: {len(recent)} new leads {label}",
-                           email_html("Your lead report 📊", body, color, "Change or turn off reports in Zenoxi → Website Agents → Emails."),
+                           email_html("Your lead report 📊", body, color, "Change or turn off reports in Zenoxi → Website Agents → Emails.", agent["business_name"]),
                            f"{len(recent)} new leads {label}. All leads attached.",
                            attachments=[(f"{safe_filename(agent['business_name'])}_leads.xlsx", xlsx,
                                          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")])
@@ -590,7 +601,7 @@ async def _run_due_jobs() -> dict:
                 unsub = f"{settings.public_api_url.rstrip('/')}/api/public/unsubscribe?l={lead['_id']}&t={unsubscribe_token(lead['_id'])}"
                 status = await deliver(agent, lead["_id"], email, "followup", subject,
                                        email_html(subject, text_to_html(body), (agent.get("settings") or {}).get("color", "#ff6a2b"),
-                                                  f'<a href="{unsub}" style="color:#8a8178">Unsubscribe</a>'),
+                                                  f'<a href="{unsub}" style="color:#8a8178">Unsubscribe</a>', agent["business_name"]),
                                        body + f"\n\nUnsubscribe: {unsub}", reply_to=await owner_address(agent))
                 await db.agent_leads.update_one({"_id": lead["_id"]}, {"$set": {"followup_sent_at": now()}})
                 if status in ("sent", "logged"):
