@@ -67,6 +67,18 @@ account (Professional) and a second Instagram account to chat with it.
    Meta **App secret** (`META_APP_SECRET`), which you already set for WhatsApp.
 6. Ignore **4. Complete App Review** while testing: it is only needed to let people who aren't testers chat with
    the bot (and that also needs business verification).
+7. **Subscribe the Instagram account to the app.** This is easy to miss: without it, the dashboard "Test" button works
+   but real DMs never arrive. Run once, with the account ID and the same token:
+   ```bash
+   curl -X POST "https://graph.facebook.com/v23.0/<INSTAGRAM_ACCOUNT_ID>/subscribed_apps" \
+     -d "subscribed_fields=messages" -d "access_token=<INSTAGRAM_ACCESS_TOKEN>"
+   ```
+   Expected answer: `{"success":true}`. Check with
+   `GET https://graph.facebook.com/v23.0/<INSTAGRAM_ACCOUNT_ID>/subscribed_apps?access_token=…`; it should list your app
+   with `messages`.
+8. If the account doesn't appear when creating the configuration or token, connect it to the business portfolio first:
+   **business.facebook.com/settings → Accounts → Instagram accounts → Add**, then give the app and the system user
+   access to it.
 
 ## Set the variables and test
 
@@ -86,6 +98,22 @@ PUBLIC_FRONTEND_URL=https://zenoxi.vercel.app
 ```
 
 Then message your WhatsApp number or Instagram account with `hi`. You should get the help message back.
+
+## Going live for everyone
+
+While the Meta app is **unpublished** (development mode):
+- **Instagram:** only accounts with a role on the app (Instagram testers) can chat with the bot.
+- **WhatsApp:** Meta delivers no real messages, only dashboard test webhooks.
+
+To open both to the public:
+1. **Business verification** in the business portfolio (legal business documents, depending on your country).
+2. **App Review** for advanced access to `instagram_manage_messages` (and the WhatsApp messaging permissions). Submit a
+   screen recording of the bot replying, a usage description, and the Privacy Policy, Terms and Data deletion URLs
+   (`https://zenoxi.vercel.app/privacy`, `/terms`, `/data-deletion`).
+3. **Publish** the app (**Publish** in the app dashboard).
+4. For WhatsApp, add your own phone number (not the test number) and get the display name approved.
+
+No code changes are needed: once Meta approves, everything already works.
 
 ## Troubleshooting
 

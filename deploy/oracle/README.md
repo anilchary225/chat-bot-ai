@@ -1,5 +1,8 @@
 # Oracle Always Free backend deployment
 
+> **Legacy:** this describes an older Zenoxi that ran Ollama models. The backend now uses OpenRouter, so these
+> instructions no longer match the code. Use [docs/DEPLOYMENT.md](../../docs/DEPLOYMENT.md) instead.
+
 This setup runs the FastAPI backend and Ollama on the same Oracle VM. Ollama is only reachable on the private Docker network; Caddy publishes the API over HTTPS. Ollama's model files and Caddy's certificates are stored in persistent Docker volumes.
 
 ## 1. Create the VM

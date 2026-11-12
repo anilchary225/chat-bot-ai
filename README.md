@@ -1,144 +1,110 @@
-# Zenoxi AI Chat
+<p align="center">
+  <img src="frontend/public/zenoxi-logo.png" width="96" alt="Zenoxi logo">
+</p>
 
-A standalone, text-only AI chatbot using:
-- React + Vite + Tailwind CSS frontend
-- FastAPI backend
-- OpenRouter `openrouter/free` model routing for hosted inference
-- MongoDB Atlas for conversation persistence
-- Optional live web search (Tavily, or free keyless engines as a fallback) with cited sources
-- Accounts: "Continue with Google", or sign up / sign in with a 6-digit code sent by email (no passwords)
-- Document uploads (PDF, Word, text, CSV, code) that the AI reads and cites
-- Resume ATS Match: score a resume against a job description and generate a tailored one-page resume (PDF/DOCX)
-- One conversation across the website, WhatsApp and Instagram
+<h1 align="center">Zenoxi</h1>
 
-Phase 1 runs locally. It includes chat sessions, conversation history, streaming responses, web search, document uploads, and light/dark themes. No voice or image features.
+<p align="center">
+  An AI chat assistant with live web search, document Q&amp;A and a resume ATS tool,<br>
+  where one conversation continues across the website, Instagram and WhatsApp.
+</p>
 
-## Prerequisites
-- Python 3.11+
-- Node.js 20+
-- OpenRouter API key (free account)
-- MongoDB Atlas account (or local MongoDB)
+<p align="center">
+  <a href="https://zenoxi.vercel.app">Live app</a> ·
+  <a href="docs/USER_GUIDE.md">User guide</a> ·
+  <a href="docs/API.md">API</a> ·
+  <a href="docs/DEPLOYMENT.md">Deployment</a> ·
+  <a href="docs/README.md">All docs</a>
+</p>
 
-## 1. Configure OpenRouter and MongoDB
+---
 
-Create a MongoDB Atlas cluster, create a database user, and allow your development IP in Network Access.
+## Features
 
-Copy `backend/.env.example` to `backend/.env` and set `MONGODB_URI` and `OPENROUTER_API_KEY`.
-The backend uses OpenRouter's `openrouter/free` router, which selects a free model.
-Do not commit `backend/.env`.
+| | Feature | What it does |
+|---|---|---|
+| 💬 | **AI chat** | Streaming answers from free OpenRouter models, with chat history and Markdown/code rendering. |
+| 🔎 | **Live web search** | Optional per message: searches the web (Tavily, with a free keyless fallback) and answers with numbered, clickable sources. |
+| 📄 | **Documents** | Attach PDF, Word, text, CSV, JSON or code files; Zenoxi reads them and answers questions about them. |
+| 💼 | **Resume ATS Match** | Scores a resume against a job description, lists missing keywords and formatting issues, and generates a tailored one-page resume (PDF/DOCX) without inventing experience. |
+| 🔁 | **One chat everywhere** | Continue the same conversation on the website, Instagram DMs and WhatsApp, with link codes and live sync. |
+| 🔐 | **Accounts** | "Continue with Google" or passwordless sign-in with a 6-digit email code. Every user only sees their own chats. |
+| 🎨 | **Animated UI** | React + Framer Motion interface with light/dark themes, a mobile layout and an animated orb assistant. |
 
-### Web search (optional)
-Turn on the **Web** toggle in the message box to answer from live search results. The backend searches,
-adds the top results to the prompt with today's date, and the reply cites them as [1], [2] with source chips.
+## Tech stack
 
-- Set `TAVILY_API_KEY` (free tier at https://tavily.com) for reliable results.
-- When the Tavily key runs out of credits (HTTP 432/433) or is rejected, Zenoxi switches to the free engines
-  and stops calling Tavily for an hour (one minute after a 429 rate limit), then tries Tavily again.
-- Without a key, Zenoxi falls back to free keyless engines via the `ddgs` package. They work without
-  sign-up but can be rate-limited or blocked from some networks (including some cloud hosts).
-- `WEB_SEARCH_MAX_RESULTS` sets how many results to use (default 5).
+| Layer | Technology |
+|---|---|
+| Frontend | React 18, Vite 6, Framer Motion, Tailwind CSS (base), react-markdown |
+| Backend | Python 3.12, FastAPI, Uvicorn, Pydantic Settings |
+| Database | MongoDB Atlas (PyMongo async client) |
+| AI | OpenRouter (`openrouter/free` model router) |
+| Search | Tavily API, fallback to `ddgs` (Bing, DuckDuckGo, Brave and others) |
+| Documents | pypdf, python-docx, reportlab (PDF output) |
+| Auth | Google Identity Services + `google-auth`, email codes via Brevo or SMTP |
+| Messaging | WhatsApp Cloud API, Instagram API (Unified login) |
+| Hosting | Vercel (frontend), Render (backend), MongoDB Atlas |
 
-### Documents
-Attach files with the paperclip in the message box or drag them onto the chat. Zenoxi extracts the text and
-uses it for every later message in that chat.
+## Quick start (local)
 
-- Supported: PDF, Word (.docx), TXT, Markdown, CSV/TSV, JSON and common code files; up to 10 MB and 10 files per chat.
-- Scanned PDFs (images without selectable text) and password-protected PDFs can't be read; old `.doc` files need saving as `.docx`.
-- Large documents are split into passages and only the ones most relevant to the question are sent to the model.
-  `DOC_CONTEXT_CHARS` (default 24000) sets how much document text goes into each prompt.
-- Extracted text is stored in MongoDB (`documents` collection) and deleted with its chat.
-- On Render, add `TAVILY_API_KEY` as an environment variable on the backend service.
+**Requirements:** Python 3.11+, Node.js 20+, a MongoDB connection string, and an OpenRouter API key.
 
-### Accounts and email codes
-Everyone signs in with their email: Zenoxi emails a 6-digit code (valid 10 minutes, 5 tries, one resend per minute).
-Each user only sees their own chats. Chats created before accounts existed have no owner and are no longer listed.
+```bash
+git clone https://github.com/anilchary225/chat-bot-ai.git
+cd chat-bot-ai
+```
 
-1. Set `AUTH_SECRET` to a long random string (`python -c "import secrets; print(secrets.token_urlsafe(32))"`).
-2. Choose how emails are sent:
-   - **Brevo (recommended, free ~300 emails/day):** create an account at brevo.com, add and verify your Gmail
-     under *Senders*, create an API key under *SMTP & API*, then set `BREVO_API_KEY` and `MAIL_FROM` (that Gmail).
-     It uses HTTPS, so it works on hosts that block SMTP ports (Render's free plan may).
-   - **Gmail SMTP:** turn on 2-step verification, create an *App password*, then set `SMTP_HOST=smtp.gmail.com`,
-     `SMTP_PORT=587`, `SMTP_USERNAME`/`MAIL_FROM` = your Gmail and `SMTP_PASSWORD` = the app password.
-   - **Nothing set (local development):** codes are printed in the backend log instead of being emailed.
-3. Codes sent from a Gmail address through a third party can land in spam; a custom domain avoids that.
-4. The email design lives in `backend/app/templates/verification.html` (and `.txt`); edit it freely.
-   Words like `$code` and `$greeting` are filled in by `backend/app/mailer.py`.
-
-### Continue with Google (optional, free)
-1. Open https://console.cloud.google.com, create (or pick) a project.
-2. **APIs & Services → OAuth consent screen** (Google Auth Platform): choose *External*, fill in the app name
-   (Zenoxi), support email and developer email, and publish the app (*In production*) so anyone can sign in.
-   Sign-in only asks for basic profile + email, so Google doesn't require a verification review.
-3. **Credentials → Create credentials → OAuth client ID → Web application.** Under *Authorized JavaScript origins*
-   add `http://localhost:5173`, `http://localhost` and `https://zenoxi.vercel.app` (no redirect URIs needed).
-4. Copy the client ID (`….apps.googleusercontent.com`) into **both**:
-   - backend `GOOGLE_CLIENT_ID` (Render environment / `backend/.env`)
-   - frontend `VITE_GOOGLE_CLIENT_ID` (Vercel environment / `frontend/.env`), then redeploy the frontend.
-5. Without the client ID the Google button is hidden and email codes keep working. Signing in with Google using the
-   same email as an existing account opens that same account.
-
-### Resume ATS Match
-Open **Resume ATS Match** in the sidebar, upload a resume (PDF/DOCX/text) and paste a job description. Zenoxi shows a
-match score, matched and missing keywords and formatting checks, then rewrites the resume for the job without
-inventing experience (unsupported keywords are listed as "add only if true"). The result uses a classic one-page
-template and the PDF is automatically scaled to fit one A4 page; a matching Word file is also available.
-The score is an estimate; real applicant tracking systems each score differently.
-
-### WhatsApp and Instagram (optional)
-Chat with Zenoxi on WhatsApp and Instagram and continue the same conversation on the website. Replying to people who
-message first is free on both platforms. Setup takes about 30 minutes in Meta's developer dashboard:
-see [docs/MESSAGING_SETUP.md](docs/MESSAGING_SETUP.md).
-
-## 2. Start backend
+**Backend:**
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
-# Edit .env
+cp .env.example .env            # then fill in MONGODB_URI, OPENROUTER_API_KEY, AUTH_SECRET
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-API docs: http://127.0.0.1:8000/docs
-
-## 3. Start frontend
+**Frontend** (in a second terminal):
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env
+cp .env.example .env            # VITE_API_URL=http://127.0.0.1:8000
 npm run dev
 ```
 
-Open the Vite URL, normally http://localhost:5173.
+Open http://localhost:5173. With no email service configured, sign-in codes are printed in the backend terminal.
 
-## API
-- `GET /api/health`
-- `GET /api/chats`
-- `POST /api/chats`
-- `GET /api/chats/{chat_id}/messages`
-- `DELETE /api/chats/{chat_id}`
-- `POST /api/auth/request-code` `{email, mode: "signin"|"signup", name?}`, `POST /api/auth/verify` `{email, code}` → `{token, user}`,
-  `POST /api/auth/google` `{credential}` (Google ID token) → `{token, user}`, `GET /api/auth/me`, `POST /api/auth/logout` — every other `/api` call needs `Authorization: Bearer <token>`
-- `POST /api/chats/{chat_id}/link-code` — one-time code to continue a chat on WhatsApp/Instagram; `GET /api/channels`
-- `POST /api/resume/analyze` (multipart `file` or `resume_text`, plus `job_description`), `POST /api/resume/tailor`,
-  `POST /api/resume/pdf`, `POST /api/resume/docx`
-- `GET|POST /webhooks/whatsapp`, `GET|POST /webhooks/instagram` — Meta webhooks (signature-checked)
-- `POST /api/chats/{chat_id}/documents` — multipart upload (`file`); returns file details
-- `GET /api/chats/{chat_id}/documents`
-- `DELETE /api/chats/{chat_id}/documents/{document_id}`
-- `POST /api/chats/{chat_id}/messages` — body `{"content": "...", "web_search": false, "attachment_ids": []}`; streams newline-delimited JSON events:
-  - `{"type":"status","stage":"searching"}` (web search only)
-  - `{"type":"sources","sources":[{"title","url","domain","snippet"}]}` (web search only)
-  - `{"type":"notice","message":"..."}` (search failed; answer continues without it)
-  - `{"type":"token","content":"..."}`
-  - `{"type":"done","message_id":"..."}`
-  - `{"type":"error","message":"..."}`
+API docs (Swagger UI) are served at http://127.0.0.1:8000/docs.
 
-## Notes
-- OpenRouter free models have provider availability and usage limits; the free account currently allows up to 50 requests per day.
-- This is a development MVP, not a public multi-user production deployment. Before exposing it publicly, add authentication, per-user data isolation, rate limiting, HTTPS, request limits, and secure secret management.
-- A free frontend host does not provide free, always-on model inference. OpenRouter supplies hosted inference within its free model and rate limits.
+## Documentation
+
+| Document | For |
+|---|---|
+| [User guide](docs/USER_GUIDE.md) | People using Zenoxi: chat, search, files, resume tool, Instagram/WhatsApp |
+| [Architecture](docs/ARCHITECTURE.md) | How the system fits together, data model, request flows |
+| [API reference](docs/API.md) | Every HTTP endpoint, with request/response examples |
+| [Configuration](docs/CONFIGURATION.md) | Every environment variable, backend and frontend |
+| [Deployment](docs/DEPLOYMENT.md) | Render, Vercel, MongoDB Atlas, Google, email, go-live checklist |
+| [Messaging setup](docs/MESSAGING_SETUP.md) | Connecting WhatsApp and Instagram through Meta |
+| [Development](docs/DEVELOPMENT.md) | Project structure, local workflow, conventions |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Known problems and fixes |
+| [Security](SECURITY.md) | Security model and how to report vulnerabilities |
+| [Contributing](CONTRIBUTING.md) | How to propose changes |
+| [Changelog](CHANGELOG.md) | Release history |
+
+## Project status
+
+Zenoxi is in active development (version 0.3.0). The website is live for everyone. Instagram works for accounts added as
+testers, and WhatsApp needs Meta business verification before real messages are delivered
+(see [Messaging setup](docs/MESSAGING_SETUP.md#going-live-for-everyone)).
+
+Free-tier limits apply: OpenRouter's free models allow about 50 requests a day, and Render's free plan sleeps after
+about 15 minutes idle (the first request then takes up to a minute).
+
+## Legal
+
+- [Privacy Policy](https://zenoxi.vercel.app/privacy) · [Terms of Service](https://zenoxi.vercel.app/terms) ·
+  [Data deletion](https://zenoxi.vercel.app/data-deletion)
+- No open-source license has been chosen yet, so all rights are reserved by the author.

@@ -1,5 +1,8 @@
 # Render Free backend
 
+> **Legacy:** this describes an older Zenoxi that ran Ollama models. The backend now uses OpenRouter, so these
+> instructions no longer match the code. Use [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md) instead.
+
 `render.yaml` defines a free Render web service for the FastAPI backend. Create it from the Render Dashboard by selecting **New > Blueprint** and connecting this GitHub repository. During setup, provide `MONGODB_URI` as a secret environment variable; do not add it to this repository.
 
 After creation, set the Vercel project's Production environment variable `VITE_API_URL` to the service's `https://<service>.onrender.com` URL, then redeploy the frontend.
