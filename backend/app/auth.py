@@ -147,7 +147,8 @@ async def start_session(db, user: dict, extra: dict | None = None) -> dict:
     await db.sessions.insert_one({
         "_id": _hash(token), "user_id": user["_id"], "created_at": now(), "expires_at": now() + SESSION_TTL,
     })
-    return {"token": token, "user": serialize_user(user)}
+    from .agents import is_admin  # local import: agents imports this module
+    return {"token": token, "user": {**serialize_user(user), "is_admin": is_admin(user)}}
 
 
 def verify_google_token(credential: str) -> dict:
