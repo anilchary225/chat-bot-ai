@@ -34,6 +34,24 @@ the `.env.example` files). In production set them in **Render → Environment** 
 
 With no email option set, codes are written to the server log (development only).
 
+### Website Agents and admin
+
+| Variable | Default | Description |
+|---|---|---|
+| `ADMIN_EMAILS` | | Comma-separated emails that get the Admin dashboard and `/api/admin/*` (e.g. your own). |
+| `AGENT_DAILY_MESSAGES` | `100` | Maximum visitor messages per agent per day, protecting the shared AI quota. |
+| `AGENT_DAILY_MESSAGES_OWN_KEY` | `2000` | The daily limit for agents whose owner added their own OpenRouter key. |
+| `AGENT_DAILY_EMAILS` | `50` | Maximum emails per agent per day (owner alerts, visitor confirmations, follow-ups, reports). |
+| `PUBLIC_API_URL` | Render URL | This API's public address, used for unsubscribe links in emails. |
+| `CRON_SECRET` | | Optional. Lets an external scheduler call `POST /api/cron/run` with header `X-Cron-Secret`. |
+| `BACKGROUND_JOBS` | `true` | Runs reports and follow-ups inside the server every 30 minutes. A MongoDB lock makes each run happen once, even with several copies. |
+
+Owners' own OpenRouter keys are encrypted (Fernet) with a key derived from `AUTH_SECRET`. **Changing `AUTH_SECRET`
+signs everyone out and makes saved owner keys unreadable** (owners must re-enter them).
+
+**Brevo IP allow-list:** if Brevo has "Authorised IPs" turned on, it rejects emails from Render (whose IPs change).
+Turn it off in Brevo → Security → Authorised IPs, or emails show as `failed` in the agent's email log.
+
 ### Web search and documents
 
 | Variable | Default | Description |

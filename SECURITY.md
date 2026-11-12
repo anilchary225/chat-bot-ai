@@ -21,20 +21,22 @@ You'll get a reply within 7 days. Please give a reasonable time to fix the issue
 | **Linked chats** | Link codes are random, single-use and expire in 15 minutes. Chat keys are 144-bit random values compared in constant time. A chat claimed by one account can't be opened by another, even with its key. |
 | **Meta webhooks** | Verify-token handshake, plus an `X-Hub-Signature-256` HMAC check of every request body. Duplicate events are ignored. |
 | **Model and search input** | Web results, documents and resumes are inserted as reference data, with instructions to the model to ignore any commands inside them. |
-| **Uploads** | Type allow-list, 10 MB cap, parsed in memory; only the extracted text is stored, never the original file. |
+| **Website Agents** | The public widget API only answers requests whose `Origin` is one of the agent's allowed domains; draft agents work only in Zenoxi previews; per-IP rate limits and a daily cap per agent; spam-trap field on inquiries; admins can disable agents. Owners' own OpenRouter keys are encrypted at rest (Fernet, key derived from `AUTH_SECRET`) and never returned. Emails to visitors need consent, carry a signed unsubscribe link, and are capped per agent per day; preview tests only email the owner. CSV exports escape formula characters. Logo uploads are re-encoded as PNG (SVG refused). The website reader refuses private, loopback and link-local addresses on every redirect hop (SSRF protection). |
+| **Uploads** | Type allow-list, 10 MB cap, parsed in memory; only the extracted text is stored. Exception: files an agent owner uploads as knowledge (≤ 5 MB) are kept so they can be emailed as brochures, and are deleted with the agent. |
 | **Transport** | HTTPS everywhere (Vercel, Render, Atlas, Graph API). |
 | **Secrets** | Only in environment variables (`sync: false` in `render.yaml`); `.env` files are git-ignored; nothing secret ships in the frontend. |
 
 ## Known limitations
 
-- **No general API rate limiting** apart from the sign-in code limits. A busy or malicious client could use up the
-  shared OpenRouter or search quota.
+- **Limited rate limiting:** only sign-in codes and the public widget API are rate-limited. A busy or malicious
+  signed-in client could still use up the shared OpenRouter or search quota through the main chat.
 - **Session tokens live in `localStorage`**, so they can be read by any script running on the site (for example, if a
   cross-site scripting bug were ever introduced). Markdown is rendered without raw HTML to reduce that risk.
 - **The MongoDB network allow-list is open** (`0.0.0.0/0`) because Render's free plan has no fixed IP; security relies
   on a strong database password.
 - **`/web` links work for the first claimer:** if a link leaks before the owner opens it, someone else could claim the
   chat.
+- **Widget origin checks stop browsers, not scripts:** a script can send any `Origin`, so rate limits and the daily cap are what protect the AI quota.
 - **No admin tools for account deletion yet:** account deletion requests are handled manually by email.
 
 ## Operational checklist

@@ -45,6 +45,10 @@ important request.
 | `documents.py` | Text extraction (PDF, DOCX, text formats), chunking and relevant-passage selection. |
 | `search.py` | Web search via Tavily, with fallback engines, retries and a quota cooldown. |
 | `resume.py` | ATS analysis (keywords, formatting checks), AI tailoring prompt, one-page PDF and DOCX rendering. |
+| `agents.py` | Website Agents: owner endpoints (interview, profile, knowledge, settings, test, leads), the public widget API (domain checks, rate limits, inquiries) and admin endpoints. |
+| `agent_extras.py` | Website Agents Phase 2/3: lead management, Excel/CSV export, emails (alerts, confirmations with brochures, follow-ups, reports), avatars, owner AI keys, analytics, unanswered inbox, scheduled jobs. |
+| `agent_tokens.py` | Token savers: instant FAQ answers and the answer cache. |
+| `webreader.py` | Reads a few pages of a public website as text, refusing private addresses (SSRF protection) and honouring robots.txt. |
 | `openrouter.py` | Streaming and non-streaming OpenRouter clients. |
 | `config.py` | Typed settings loaded from environment variables / `.env`. |
 | `db.py` | MongoDB connection and index creation at startup. |
@@ -61,6 +65,17 @@ important request.
 | `documents` | `chat_id`, `filename`, `kind`, `size`, `pages`, `chars`, `text`, `created_at` | Extracted text only (max 1.5M characters); original files are not stored. |
 | `channel_links` | `_id` = `"<channel>:<user id>"`, `chat_id` | Which chat a WhatsApp number or Instagram user is currently in. |
 | `link_codes` | `_id` = 6-character code, `chat_id`, `expires_at` | One-time codes for "Continue on…"; TTL after 15 minutes. |
+| `agents` | `owner_id`, `public_key` (unique), `name`, `business_name`, `status`, `disabled`, `profile`, `settings`, `allowed_domains`, `interview[]` | One per website assistant. |
+| `agent_sources` | `agent_id`, `kind` (`profile`/`page`/`file`/`note`), `title`, `source`, `text` | An agent's knowledge. |
+| `agent_conversations` / `agent_messages` | `agent_id`, `visitor_id`, `conversation_id`, `role`, `content` | Anonymous visitor chats. |
+| `agent_leads` | `agent_id`, `conversation_id`, `fields{}`, `page_url`, `consent`, `status` | Inquiries from the widget form. |
+| `agent_usage` / `agent_rate` | Per-agent daily counters / per-IP rate-limit windows (TTL) | Usage limits. |
+| `agent_files` | `agent_id`, `filename`, `mime`, `data` | Original uploaded files (≤ 5 MB) that can be emailed as brochures. |
+| `agent_cache` | `_id` = agent + version + question terms, `answer`, `expires_at` | Answer cache; TTL 7 days, cleared when knowledge changes. |
+| `agent_emails` | `agent_id`, `lead_id`, `kind`, `to`, `status`, `error` | Email log. |
+| `agent_unanswered` | `agent_id`, `question`, `count`, `last_at` | Questions the agent couldn't answer. |
+| `agent_unsubscribes` | `_id` = `"<agent id>:<email>"` | Visitors who opted out of emails. |
+| `job_locks` | `_id` = job + 30-minute slot | Makes scheduled jobs run once across several server copies; TTL 24 h. |
 | `channel_events` | `_id` = `"wa:<message id>"` / `"ig:<message id>"` | De-duplicates Meta webhook retries; TTL after 7 days. |
 
 ## Key flows
@@ -102,6 +117,38 @@ issuer.
 - **Live view:** while a linked chat is open, the website polls its messages every 4 seconds and shows new ones with
   a "via Instagram/WhatsApp" badge.
 
+### Website Agents
+1. **Create:** the owner gives a business name and website. `webreader` fetches up to 8 important pages, and their
+   domain becomes the first allowed domain.
+2. **Interview:** a consultant prompt asks one question at a time, skipping what the website already answers.
+3. **Profile:** the model turns the interview + website into strict JSON (retried once on bad JSON); the owner edits
+   it, and it's saved as a `profile` knowledge source.
+4. **Answering:** for each visitor message, `knowledge_context` picks the most relevant passages from every source
+   within a shared budget. The system prompt only allows answers from that knowledge, lists the owner's "never say"
+   items, and asks the model to add `[[SHOW_FORM]]` when the visitor wants to book, buy or be contacted. Buying-intent
+   words in the message also trigger the form.
+5. **Widget:** `widget.js` renders in a Shadow DOM (isolated from the site's CSS), calls the public API, streams
+   answers, and shows the inquiry form as a card or as a conversational sequence.
+6. **Protection:** `Origin` must match the allowed domains, draft agents only work in previews, and there are
+   per-IP rate limits, a daily per-agent cap, a spam trap on the form, and admin disabling.
+
+7. **After an inquiry:** a background task writes a one-line AI summary, emails the owner (Reply-To = visitor), and,
+   with consent, sends the visitor a confirmation with any brochures they ticked. Follow-ups and daily/weekly reports
+   run from the scheduled-jobs loop.
+
+### Saving AI tokens
+| Where | How |
+|---|---|
+| Website Agents | Questions that match a saved FAQ get the FAQ answer with no AI call. First questions are cached per agent for 7 days (cache cleared on any knowledge change). Knowledge budget 6,000 characters (10,000 for broad questions), last 6 turns, replies capped at 450 tokens. |
+| Web chat | History trimmed to 12,000 characters, older long replies shortened; documents get 8,000 characters for specific questions and the full `DOC_CONTEXT_CHARS` only for "summarize / whole document" questions; replies capped at 1,200 tokens (500 on WhatsApp/Instagram). |
+| Documents | Passages are ranked by matching question words with light stemming ("prices" matches "price"), so fewer, better passages are sent. |
+| Owners' own key | An owner can add an OpenRouter key; their agent then uses it (higher daily limit) instead of the shared quota. |
+
+### Load balancing
+`deploy/nginx/` runs three API copies behind nginx (`least_conn`, failover, streaming without buffering, per-IP
+rate limits). The backend keeps no state in memory, so any copy can serve any request. See
+[deploy/nginx/README.md](../deploy/nginx/README.md).
+
 ### Resume ATS Match
 `/api/resume/analyze` extracts text and scores it deterministically: weighted keyword coverage (75%) plus seven
 formatting checks (25%). `/api/resume/tailor` asks the model for strict JSON, with rules against inventing facts,
@@ -126,7 +173,7 @@ scale. Resume data is not stored.
 | Limit | Value |
 |---|---|
 | Message length | 12,000 characters |
-| History sent to the model | Last 20 messages |
+| History sent to the model | Last 20 messages, trimmed to 12,000 characters |
 | Upload size / files per chat | 10 MB / 10 files |
 | Document text in a prompt | `DOC_CONTEXT_CHARS` (default 24,000 characters) |
 | Web search results | `WEB_SEARCH_MAX_RESULTS` (default 5) |

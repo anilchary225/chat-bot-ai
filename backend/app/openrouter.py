@@ -1,10 +1,10 @@
 import httpx
 from .config import settings
 
-async def stream_chat(messages: list[dict]):
+async def stream_chat(messages: list[dict], api_key: str | None = None, max_tokens: int | None = None):
     url = f"{settings.openrouter_base_url.rstrip('/')}/chat/completions"
     headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key or ''}",
+        "Authorization": f"Bearer {api_key or settings.openrouter_api_key or ''}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://zenoxi.vercel.app",
         "X-Title": "Zenoxi",
@@ -14,6 +14,7 @@ async def stream_chat(messages: list[dict]):
         "messages": messages,
         "stream": True,
         "temperature": 0.7,
+        **({"max_tokens": max_tokens} if max_tokens else {}),
     }
     timeout = httpx.Timeout(connect=10.0, read=180.0, write=30.0, pool=10.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
@@ -32,11 +33,12 @@ async def stream_chat(messages: list[dict]):
                     yield token
 
 
-async def complete_chat(messages: list[dict], temperature: float = 0.3, max_tokens: int = 4000) -> str:
+async def complete_chat(messages: list[dict], temperature: float = 0.3, max_tokens: int = 4000,
+                        api_key: str | None = None) -> str:
     """Non-streaming completion; returns the full reply text."""
     url = f"{settings.openrouter_base_url.rstrip('/')}/chat/completions"
     headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key or ''}",
+        "Authorization": f"Bearer {api_key or settings.openrouter_api_key or ''}",
         "Content-Type": "application/json",
         "HTTP-Referer": "https://zenoxi.vercel.app",
         "X-Title": "Zenoxi",

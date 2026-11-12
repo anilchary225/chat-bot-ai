@@ -7,6 +7,7 @@ the public chat list and need that key (sent by the web client) to be opened.
 """
 import hmac
 import logging
+import re
 import secrets
 from datetime import datetime, timezone
 
@@ -19,7 +20,27 @@ from .openrouter import stream_chat
 from .search import SearchError, format_sources, web_search
 
 logger = logging.getLogger("zenoxi.chat")
-HISTORY_LIMIT = 20
+HISTORY_LIMIT = 20            # newest messages considered…
+HISTORY_CHARS = 12_000        # …but only up to this much text is sent to the model
+OLD_REPLY_CHARS = 1_500       # long older assistant replies are trimmed
+SPECIFIC_DOC_CHARS = 8_000    # document text for a specific question (broad ones get DOC_CONTEXT_CHARS)
+WEB_REPLY_TOKENS = 1_200
+CHANNEL_REPLY_TOKENS = 500
+BROAD_DOC_RE = re.compile(r"\b(summar\w*|overview|explain (the|this) (doc\w*|file|pdf)|whole|entire|all (the )?(points|sections)|outline|key points)\b", re.I)
+
+
+def trim_history(history: list[dict]) -> list[dict]:
+    """Newest messages first until HISTORY_CHARS; the current (last) message is always kept in full."""
+    kept, used = [], 0
+    for i, doc in enumerate(reversed(history)):
+        content = doc["content"]
+        if i > 0 and doc["role"] == "assistant" and len(content) > OLD_REPLY_CHARS:
+            content = content[:OLD_REPLY_CHARS] + " …"
+        if i > 0 and used + len(content) > HISTORY_CHARS:
+            break
+        kept.append({"role": doc["role"], "content": content})
+        used += len(content)
+    return list(reversed(kept))
 CHANNEL_NAMES = {"web": "the website", "whatsapp": "WhatsApp", "instagram": "Instagram"}
 
 
@@ -39,6 +60,8 @@ def system_prompt(channel: str = "web") -> str:
         "You are Zenoxi, a helpful general-purpose text assistant. "
         f"Today's date is {today} (UTC). "
         "Answer clearly and accurately. If you are unsure, say so. "
+        "Reply in the user's language: if they write in Telugu, Hindi, Tamil or another language (or in that language "
+        "typed with English letters, like 'ela unnav'), reply the same way. "
         "Your built-in knowledge stops at your training cutoff, so for recent events, "
         "prices, versions or news, say your information may be out of date unless "
         "web search results are provided." + style
@@ -158,9 +181,11 @@ async def prepare_turn(db, chat: dict, user_text: str, *, attachment_ids=(), cha
     if chat_docs:
         messages.append({
             "role": "system",
-            "content": build_context(chat_docs, search_query(user_text, history), settings.doc_context_chars),
+            "content": build_context(chat_docs, search_query(user_text, history),
+                                     settings.doc_context_chars if BROAD_DOC_RE.search(user_text)
+                                     else min(SPECIFIC_DOC_CHARS, settings.doc_context_chars)),
         })
-    messages.extend({"role": doc["role"], "content": doc["content"]} for doc in history)
+    messages.extend(trim_history(history))
 
     update = {"updated_at": timestamp}
     if chat.get("title") == "New chat":
@@ -200,7 +225,7 @@ async def run_turn(db, chat: dict, user_text: str, *, channel: str, use_web: boo
             sources = await add_web_results(turn)
         except SearchError:
             notice = "Web search is unavailable right now, so this answer uses built-in knowledge."
-    pieces = [token async for token in stream_chat(turn["messages"])]
+    pieces = [token async for token in stream_chat(turn["messages"], max_tokens=CHANNEL_REPLY_TOKENS)]
     answer = "".join(pieces).strip() or "Sorry, I couldn't come up with a reply. Try asking again."
     await save_reply(db, turn["oid"], answer, sources, channel)
     return answer, sources, notice

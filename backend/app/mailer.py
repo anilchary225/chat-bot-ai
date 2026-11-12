@@ -6,6 +6,7 @@ Order of preference:
   3. Nothing configured: the code is written to the server log (local development only).
 """
 import asyncio
+import base64
 import logging
 import smtplib
 import ssl
@@ -70,31 +71,43 @@ def _content(code: str, purpose: str, to: str = "", name: str = "") -> tuple[str
     return subject, text, html
 
 
-async def _brevo(to: str, subject: str, text: str, html: str) -> None:
-    async with httpx.AsyncClient(timeout=15) as client:
+async def _brevo(to: str, subject: str, text: str, html: str, *, reply_to: str | None = None,
+                 from_name: str | None = None, attachments: list[tuple[str, bytes, str]] | None = None) -> None:
+    payload = {
+        "sender": {"name": from_name or settings.mail_from_name, "email": settings.mail_from},
+        "to": [{"email": to}],
+        "subject": subject,
+        "textContent": text,
+        "htmlContent": html,
+    }
+    if reply_to:
+        payload["replyTo"] = {"email": reply_to}
+    if attachments:
+        payload["attachment"] = [{"name": name, "content": base64.b64encode(data).decode()} for name, data, _ in attachments]
+    async with httpx.AsyncClient(timeout=30) as client:
         response = await client.post(
             "https://api.brevo.com/v3/smtp/email",
             headers={"api-key": settings.brevo_api_key, "accept": "application/json"},
-            json={
-                "sender": {"name": settings.mail_from_name, "email": settings.mail_from},
-                "to": [{"email": to}],
-                "subject": subject,
-                "textContent": text,
-                "htmlContent": html,
-            },
+            json=payload,
         )
         if response.status_code >= 400:
             logger.error("Brevo rejected the email: %s %s", response.status_code, response.text[:300])
             raise MailError("The email service rejected the message.")
 
 
-def _smtp(to: str, subject: str, text: str, html: str) -> None:
+def _smtp(to: str, subject: str, text: str, html: str, *, reply_to: str | None = None,
+          from_name: str | None = None, attachments: list[tuple[str, bytes, str]] | None = None) -> None:
     message = EmailMessage()
     message["Subject"] = subject
-    message["From"] = formataddr((settings.mail_from_name, settings.mail_from or settings.smtp_username))
+    message["From"] = formataddr((from_name or settings.mail_from_name, settings.mail_from or settings.smtp_username))
     message["To"] = to
+    if reply_to:
+        message["Reply-To"] = reply_to
     message.set_content(text)
     message.add_alternative(html, subtype="html")
+    for name, data, mime in attachments or []:
+        maintype, _, subtype = (mime or "application/octet-stream").partition("/")
+        message.add_attachment(data, maintype=maintype, subtype=subtype or "octet-stream", filename=name)
     context = ssl.create_default_context()
     if settings.smtp_port == 465:
         with smtplib.SMTP_SSL(settings.smtp_host, 465, context=context, timeout=20) as server:
@@ -105,6 +118,27 @@ def _smtp(to: str, subject: str, text: str, html: str) -> None:
             server.starttls(context=context)
             server.login(settings.smtp_username, settings.smtp_password)
             server.send_message(message)
+
+
+async def send_email(to: str, subject: str, html: str, text: str, *, reply_to: str | None = None,
+                     from_name: str | None = None, attachments: list[tuple[str, bytes, str]] | None = None) -> str:
+    """Send any email. Returns "sent", or "logged" when no provider is configured (development).
+
+    Raises MailError when the provider rejects it.
+    """
+    kwargs = {"reply_to": reply_to, "from_name": from_name, "attachments": attachments}
+    if settings.brevo_api_key and settings.mail_from:
+        await _brevo(to, subject, text, html, **kwargs)
+        return "sent"
+    if settings.smtp_host and settings.smtp_username and settings.smtp_password:
+        try:
+            await asyncio.to_thread(_smtp, to, subject, text, html, **kwargs)
+        except Exception as exc:
+            logger.exception("SMTP send failed")
+            raise MailError("Couldn't send the email.") from exc
+        return "sent"
+    logger.warning("No email service configured. Email to %s: %s (%d attachment(s))", to, subject, len(attachments or []))
+    return "logged"
 
 
 def mail_configured() -> bool:

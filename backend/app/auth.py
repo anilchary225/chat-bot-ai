@@ -201,7 +201,8 @@ async def current_user(authorization: str | None = Header(None)) -> dict:
 
 @router.get("/me")
 async def me(user: dict = Depends(current_user)):
-    return serialize_user(user)
+    from .agents import is_admin  # local import: agents imports this module
+    return {**serialize_user(user), "is_admin": is_admin(user)}
 
 
 @router.post("/logout")

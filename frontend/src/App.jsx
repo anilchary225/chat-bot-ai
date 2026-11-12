@@ -4,13 +4,15 @@ import {
 } from "framer-motion";
 import {
   Plus, MessageSquare, Trash2, ArrowUp, PanelLeftClose, PanelLeftOpen, LoaderCircle,
-  Copy, Check, AlertCircle, Menu, X, Sun, Moon, Search, Lightbulb, Code2, Rocket, PenLine, ArrowDown, Globe, Info, Paperclip, Upload, Briefcase, LogOut
+  Copy, Check, AlertCircle, Menu, X, Sun, Moon, Search, Lightbulb, Code2, Rocket, PenLine, ArrowDown, Globe, Info, Paperclip, Upload, Briefcase, LogOut, Bot, ShieldCheck
 } from "lucide-react";
 import Orb from "./components/Orb";
 import Aurora from "./components/Aurora";
 import Markdown from "./components/Markdown";
 import Sources from "./components/Sources";
 import ResumeTool from "./components/ResumeTool";
+import AgentStudio from "./components/AgentStudio";
+import AdminPanel from "./components/AdminPanel";
 import ContinueOn from "./components/ContinueOn";
 import { forgetKey, keyHeaders, listHeaders, saveKey } from "./chatKeys";
 import { AttachmentChip, ACCEPT, MAX_FILE_BYTES, isSupported } from "./components/Attachments";
@@ -646,6 +648,34 @@ function App({ user, onSignOut }) {
             {expanded && <span className="tool-text"><strong>Resume ATS Match</strong><em>Tailor to a job</em></span>}
           </motion.button>
 
+          <motion.button
+            type="button"
+            className={`tool-btn tool-agents ${view === "agents" ? "active" : ""}`}
+            onClick={() => { setView("agents"); if (isMobile) setSidebarOpen(false); }}
+            aria-label="Open Website Agents"
+            title="Website Agents"
+            whileHover={{ x: expanded ? 2 : 0 }}
+            whileTap={{ scale: 0.96 }}
+          >
+            <span className="tool-icon"><Bot size={16} /></span>
+            {expanded && <span className="tool-text"><strong>Website Agents</strong><em>AI assistant for your site</em></span>}
+          </motion.button>
+
+          {user.is_admin && (
+            <motion.button
+              type="button"
+              className={`tool-btn tool-admin ${view === "admin" ? "active" : ""}`}
+              onClick={() => { setView("admin"); if (isMobile) setSidebarOpen(false); }}
+              aria-label="Open admin dashboard"
+              title="Admin"
+              whileHover={{ x: expanded ? 2 : 0 }}
+              whileTap={{ scale: 0.96 }}
+            >
+              <span className="tool-icon"><ShieldCheck size={16} /></span>
+              {expanded && <span className="tool-text"><strong>Admin</strong><em>Platform overview</em></span>}
+            </motion.button>
+          )}
+
           {expanded && (
             <>
               <label className="search">
@@ -792,14 +822,14 @@ function App({ user, onSignOut }) {
               )}
               <AnimatePresence mode="wait" initial={false}>
                 <motion.span
-                  key={view === "resume" ? "resume" : activeChat?.title || "new"}
+                  key={view !== "chat" ? view : activeChat?.title || "new"}
                   className="current-chat-title"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   transition={{ duration: 0.18 }}
                 >
-                  {view === "resume" ? "Resume ATS Match" : activeChat?.title || "New conversation"}
+                  {{ resume: "Resume ATS Match", agents: "Website Agents", admin: "Admin" }[view] || activeChat?.title || "New conversation"}
                 </motion.span>
               </AnimatePresence>
             </div>
@@ -852,6 +882,14 @@ function App({ user, onSignOut }) {
           {view === "resume" ? (
             <section className="conversation tool-view">
               <ResumeTool api={API} />
+            </section>
+          ) : view === "agents" ? (
+            <section className="conversation tool-view">
+              <AgentStudio apiBase={API} onError={setError} />
+            </section>
+          ) : view === "admin" && user.is_admin ? (
+            <section className="conversation tool-view">
+              <AdminPanel apiBase={API} onError={setError} />
             </section>
           ) : (<>
           <section className="conversation" ref={scrollRef} onScroll={onScroll}>

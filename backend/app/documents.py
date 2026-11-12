@@ -153,8 +153,16 @@ def chunk_text(text: str) -> list[str]:
     return chunks
 
 
+def _stem(word: str) -> str:
+    """Light stemming so "refunds"/"refunded"/"refund" match each other."""
+    for suffix in ("ing", "ed", "es", "s"):
+        if len(word) > len(suffix) + 3 and word.endswith(suffix):
+            return word[: -len(suffix)]
+    return word
+
+
 def _terms(text: str) -> list[str]:
-    return [w for w in re.findall(r"[a-z0-9]+", text.lower()) if len(w) > 2 and w not in STOPWORDS]
+    return [_stem(w) for w in re.findall(r"[a-z0-9]+", text.lower()) if len(w) > 2 and w not in STOPWORDS]
 
 
 def select_passages(text: str, query: str, budget: int) -> str:

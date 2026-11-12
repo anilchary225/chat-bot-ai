@@ -48,6 +48,31 @@ versions, and anything recent.
 
 The score is an estimate; every company's ATS works a little differently. Your resume isn't stored.
 
+## Website Agents: an AI assistant for your own website
+
+1. Open **Website Agents** in the sidebar → **Create a new agent**. Enter your business name and website (optional).
+2. **Setup:** answer Zenoxi's questions about your business, then tap **Build my agent** and review the profile
+   (services, prices, hours, FAQs, policies, what never to promise). Save.
+3. **Knowledge:** add more website pages, files (brochure, price list) or notes. The agent answers **only** from
+   these.
+4. **Customize:** name, colour, position, welcome message, suggested questions, and the **inquiry form**: a card or
+   one question at a time, with your own fields.
+5. **Test:** ask what customers would ask.
+6. **Install:** add your website's domain, tap **Go live**, and paste the one-line code before `</body>` on your site
+   (tips for WordPress, Wix and Shopify are on that screen). **Preview on a sample page** shows it before you install.
+7. **Leads:** every inquiry appears here with an AI summary. Set a status (new → contacted → interested → won/lost),
+   add notes, read the visitor's chat, and download **Excel** or **CSV**.
+8. **Inbox:** questions your agent couldn't answer. Type the answer once and the agent knows it from then on.
+9. **Emails:** choose what gets sent: an alert to you for each inquiry, a confirmation to the visitor (with your
+   brochure if they ask for it), a follow-up after a few days, and a daily or weekly leads report. Visitors can always
+   unsubscribe.
+10. **Analytics:** messages, leads, conversion, top questions, and how many answers were free.
+
+**Customize** also lets you pick an avatar (orb, initials, emoji or your logo), the widget language (English, Hindi,
+Telugu, Tamil) and, optionally, add your own OpenRouter key. Each agent handles up to 100 visitor messages a day on
+Zenoxi's AI, or 2,000 with your own key. To share a brochure, upload it in **Knowledge** and turn on **Email to
+visitors**.
+
 ## One chat on the website, Instagram and WhatsApp
 
 **Continue a website chat in Instagram or WhatsApp:**

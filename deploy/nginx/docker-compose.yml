@@ -1,0 +1,31 @@
+# Zenoxi API: 3 backend copies behind nginx.
+# Run from the repository root:
+#   docker compose -f deploy/nginx/docker-compose.yml up -d --build
+# Settings come from backend/.env (same variables as Render).
+
+x-api: &api
+  build: ../../backend
+  env_file: ../../backend/.env
+  environment:
+    PORT: "8000"
+  restart: unless-stopped
+  command: ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips='*'"]
+  healthcheck:
+    test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4)"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+
+services:
+  api1: *api
+  api2: *api
+  api3: *api
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on: [api1, api2, api3]
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    restart: unless-stopped

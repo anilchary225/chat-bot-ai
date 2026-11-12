@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     instagram_account_id: str | None = None
     auth_secret: str | None = None
     google_client_id: str | None = None
+    admin_emails: str | None = None
+    agent_daily_messages: int = 100
+    agent_daily_messages_own_key: int = 2000
+    agent_daily_emails: int = 50
+    public_api_url: str = "https://chat-bot-ai-ouc2.onrender.com"
+    cron_secret: str | None = None
+    background_jobs: bool = True
     brevo_api_key: str | None = None
     mail_from: str | None = None
     mail_from_name: str = "Zenoxi"

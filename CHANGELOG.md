@@ -6,6 +6,21 @@ All notable changes to Zenoxi are listed here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Website Agents (Phase 1):** owners create a website assistant by chatting with Zenoxi (website reading +
+  interview + editable business profile), add knowledge (pages, files, notes), customize the look and inquiry form,
+  test it, and install a floating widget with one line of code. Visitors get answers only from the owner's
+  information and can send inquiries (form card or conversational), saved as leads.
+- Public widget API with allowed-domain checks, preview mode, per-IP rate limits and a daily per-agent cap.
+- **Website Agents (Phase 2/3):** lead statuses, notes, AI summaries and conversation view; Excel/CSV export; owner
+  alerts, visitor confirmations with brochure attachments, follow-ups and daily/weekly reports (with unsubscribe
+  links and a daily email cap); agent avatars (orb, initials, emoji, logo); widget in English, Hindi, Telugu and
+  Tamil; owners' own OpenRouter key; analytics; an inbox of unanswered questions.
+- **Token savings:** instant FAQ answers and an answer cache for agents, adaptive knowledge/document budgets, trimmed
+  chat history and reply length caps.
+- **Load balancing:** `deploy/nginx` runs several API copies behind nginx; scheduled jobs use a MongoDB lock so they
+  run once.
+- Admin dashboard for platform admins (`ADMIN_EMAILS`): usage overview and disabling agents.
+- Safe website reader with SSRF protection and robots.txt support.
 - Full documentation set: user guide, architecture, API reference, configuration, deployment, development,
   troubleshooting, security policy, contributing guide and this changelog.
 

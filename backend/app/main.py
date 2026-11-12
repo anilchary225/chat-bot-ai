@@ -16,9 +16,11 @@ from pydantic import BaseModel, Field
 
 from . import resume as resume_tool
 from .auth import current_user, router as auth_router
+from .agents import admin_router, owner_router, public_router
+from .agent_extras import background_loop, cron_router, owner_x, public_x
 from .channels import router as channels_router, channel_config
 from .chat_core import (
-    add_web_results, attachment_meta, create_chat as new_chat_doc, ensure_access_key, key_matches,
+    WEB_REPLY_TOKENS, add_web_results, attachment_meta, create_chat as new_chat_doc, ensure_access_key, key_matches,
     model_error_message, now, parse_object_id, prepare_turn, save_reply, serialize_chat, serialize_message,
 )
 from .config import settings
@@ -77,27 +79,49 @@ async def lifespan(app: FastAPI):
     if not settings.auth_secret:
         logger.warning("AUTH_SECRET is not set; using a development secret. Set it before going to production.")
     await connect_db()
+    jobs = asyncio.create_task(background_loop()) if settings.background_jobs else None
     yield
+    if jobs:
+        jobs.cancel()
     await close_db()
 
 
-app = FastAPI(title="Zenoxi API", version="0.2.0", lifespan=lifespan)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=list(dict.fromkeys([
-        settings.frontend_origin,
-        "https://zenoxi.vercel.app",
-        "https://www.zenoxi.vercel.app",
-        "https://chat-bot-ai-anil-charys-projects.vercel.app",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ])),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(title="Zenoxi API", version="0.4.0", lifespan=lifespan)
+
+APP_ORIGINS = list(dict.fromkeys([
+    settings.frontend_origin,
+    "https://zenoxi.vercel.app",
+    "https://www.zenoxi.vercel.app",
+    "https://chat-bot-ai-anil-charys-projects.vercel.app",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]))
+
+
+class SplitCORS:
+    """Open CORS for the public widget API (it runs on customers' websites and checks each agent's
+    allowed domains itself); the rest of the API only accepts Zenoxi's own site."""
+
+    def __init__(self, app):
+        self.public = CORSMiddleware(app, allow_origins=["*"], allow_methods=["GET", "POST", "OPTIONS"],
+                                     allow_headers=["Content-Type"], max_age=600)
+        self.private = CORSMiddleware(app, allow_origins=APP_ORIGINS, allow_credentials=True,
+                                      allow_methods=["*"], allow_headers=["*"])
+
+    async def __call__(self, scope, receive, send):
+        target = self.public if scope.get("path", "").startswith("/api/public/") else self.private
+        await target(scope, receive, send)
+
+
+app.add_middleware(SplitCORS)
 app.include_router(channels_router)
 app.include_router(auth_router)
+app.include_router(owner_x)  # before owner_router: /leads/export must win over /leads/{id}
+app.include_router(owner_router)
+app.include_router(public_x)
+app.include_router(cron_router)
+app.include_router(public_router)
+app.include_router(admin_router)
 
 
 @app.get("/api/health")
@@ -274,7 +298,7 @@ async def send_message(chat_id: str, payload: SendMessageRequest, x_chat_key: st
             if sources:
                 yield json.dumps({"type": "sources", "sources": sources}) + "\n"
         try:
-            async for token in stream_chat(turn["messages"]):
+            async for token in stream_chat(turn["messages"], max_tokens=WEB_REPLY_TOKENS):
                 pieces.append(token)
                 yield json.dumps({"type": "token", "content": token}) + "\n"
             message_id = await save_reply(db, turn["oid"], "".join(pieces), sources, "web")
