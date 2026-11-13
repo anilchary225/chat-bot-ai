@@ -16,6 +16,10 @@ class AgentWelcomeTests(unittest.TestCase):
         old = "Hi! 👋 I'm VAC UI Assistant, VAC UI Components's assistant. How can I help you today?"
         self.assertEqual(widget_welcome_message(self.agent, old), self.expected)
 
+    def test_existing_zenoxi_greeting_with_awkward_possessive_is_upgraded(self):
+        old = "Hi! 👋 I'm Zenoxi, VAC UI Components's assistant. How can I help you today?"
+        self.assertEqual(widget_welcome_message(self.agent, old), self.expected)
+
     def test_missing_greeting_uses_zenoxi_and_company_name(self):
         self.assertEqual(widget_welcome_message(self.agent, None), self.expected)
 

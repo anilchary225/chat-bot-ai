@@ -180,7 +180,9 @@ def widget_welcome_message(agent: dict, saved: str | None) -> str:
     intro = f"Hi, I'm Zenoxi, your {business} assistant. How can I help you today?"
     previous_default = f"Hi! 👋 I'm {agent.get('name') or 'Assistant'}, {business}'s assistant. How can I help you today?"
     welcome = (saved or "").strip()
-    if not welcome or welcome == previous_default or welcome.startswith(f"Hi! 👋 I'm {agent.get('name') or 'Assistant'},"):
+    previous_zenoxi_default = f"Hi! 👋 I'm Zenoxi, {business}'s assistant. How can I help you today?"
+    if (not welcome or welcome in (previous_default, previous_zenoxi_default)
+            or welcome.startswith(f"Hi! 👋 I'm {agent.get('name') or 'Assistant'},")):
         return intro
     # Keep owner-written messages, while adding the required identity if they left it out.
     if "i'm zenoxi" in welcome.lower() or "i am zenoxi" in welcome.lower():
