@@ -473,8 +473,16 @@ function CustomizeTab({ apiBase, agent, onAgent, onError }) {
 
 // ------------------------------------------------------------------ test playground
 
+function agentWelcome(agent) {
+  const business = agent.business_name || "business";
+  const greeting = `Hi, I'm Zenoxi, your ${business} assistant. How can I help you today?`;
+  const saved = agent.settings?.welcome_message?.trim();
+  if (!saved || saved.startsWith("Hi! 👋 I'm ")) return greeting;
+  return /\bi(?:'m| am) Zenoxi\b/i.test(saved) ? saved : `${greeting}\n\n${saved}`;
+}
+
 function TestTab({ apiBase, agent, onError }) {
-  const [messages, setMessages] = useState([{ role: "assistant", content: agent.settings?.welcome_message || "Hi!" }]);
+  const [messages, setMessages] = useState([{ role: "assistant", content: agentWelcome(agent) }]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const listRef = useRef(null);

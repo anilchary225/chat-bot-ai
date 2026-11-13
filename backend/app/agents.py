@@ -157,7 +157,7 @@ def default_settings(name: str, business: str) -> dict:
         "avatar": {"type": "orb", "emoji": "🤖", "initials": initials_for(business)},
         "language": "en",
         "emails": default_emails(),
-        "welcome_message": f"Hi! 👋 I'm {name}, {business}'s assistant. How can I help you today?",
+        "welcome_message": f"Hi, I'm Zenoxi, your {business} assistant. How can I help you today?",
         "color": "#ff6a2b",
         "position": "right",
         "tone": "friendly",
@@ -172,6 +172,20 @@ def default_settings(name: str, business: str) -> dict:
             "fields": DEFAULT_FIELDS,
         },
     }
+
+
+def widget_welcome_message(agent: dict, saved: str | None) -> str:
+    """Use the Zenoxi + business introduction for defaults and previously saved defaults."""
+    business = agent.get("business_name") or "business"
+    intro = f"Hi, I'm Zenoxi, your {business} assistant. How can I help you today?"
+    previous_default = f"Hi! 👋 I'm {agent.get('name') or 'Assistant'}, {business}'s assistant. How can I help you today?"
+    welcome = (saved or "").strip()
+    if not welcome or welcome == previous_default or welcome.startswith(f"Hi! 👋 I'm {agent.get('name') or 'Assistant'},"):
+        return intro
+    # Keep owner-written messages, while adding the required identity if they left it out.
+    if "i'm zenoxi" in welcome.lower() or "i am zenoxi" in welcome.lower():
+        return welcome
+    return f"{intro}\n\n{welcome}"
 
 
 def clean_domain(value: str) -> str | None:
@@ -894,7 +908,8 @@ async def widget_config(public_key: str, origin: str | None = Header(None)):
         "avatar": avatar, "language": s.get("language", "en"), "documents": docs,
         "confirm_email": bool((s.get("emails") or {}).get("visitor_confirmation")),
         "name": agent["name"], "business_name": agent["business_name"], "preview": preview,
-        "welcome_message": s.get("welcome_message"), "color": s.get("color"), "position": s.get("position", "right"),
+        "welcome_message": widget_welcome_message(agent, s.get("welcome_message")),
+        "color": s.get("color"), "position": s.get("position", "right"),
         "suggested_questions": s.get("suggested_questions", []),
         "form": {k: form.get(k) for k in ("enabled", "style", "title", "button_label", "success_message", "fields")},
     }
