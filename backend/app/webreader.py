@@ -5,6 +5,7 @@ server's own network), redirects re-checked hop by hop, size and time limits, ro
 """
 import asyncio
 import ipaddress
+import json
 import logging
 import re
 import socket
@@ -80,6 +81,29 @@ async def _fetch(client: httpx.AsyncClient, url: str) -> tuple[str, str] | None:
     return None
 
 
+async def _fetch_text_asset(client: httpx.AsyncClient, url: str) -> tuple[str, str] | None:
+    """Fetch a same-host client bundle for discovering public content API routes."""
+    for _ in range(4):
+        host = urlparse(url).hostname or ""
+        if not await asyncio.to_thread(_host_is_public, host):
+            return None
+        async with client.stream("GET", url) as response:
+            if response.status_code in (301, 302, 303, 307, 308) and response.headers.get("location"):
+                url = urljoin(url, response.headers["location"])
+                continue
+            content_type = response.headers.get("content-type", "").lower()
+            if response.status_code >= 400 or not any(t in content_type for t in ("javascript", "ecmascript", "text/plain")):
+                return None
+            chunks, size = [], 0
+            async for chunk in response.aiter_bytes():
+                size += len(chunk)
+                if size > MAX_BYTES:
+                    return None
+                chunks.append(chunk)
+            return str(response.url), b"".join(chunks).decode(response.encoding or "utf-8", errors="replace")
+    return None
+
+
 class _TextExtractor(HTMLParser):
     SKIP = {"script", "style", "noscript", "svg", "template", "iframe", "head"}
     BLOCK = {"p", "div", "section", "article", "li", "br", "h1", "h2", "h3", "h4", "h5", "h6", "tr", "header",
@@ -87,19 +111,26 @@ class _TextExtractor(HTMLParser):
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.parts, self.links, self.title = [], [], ""
+        self.parts, self.links, self.scripts, self.title, self.description = [], [], [], "", ""
         self._skip_depth = 0
         self._in_title = False
 
     def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
         if tag in self.SKIP:
             self._skip_depth += 1
         if tag == "title":
             self._in_title = True
         if tag == "a":
-            href = dict(attrs).get("href")
+            href = attrs.get("href")
             if href:
                 self.links.append(href)
+        if tag == "script":
+            src = attrs.get("src")
+            if src:
+                self.scripts.append(src)
+        if tag == "meta" and (attrs.get("name", "").lower() == "description" or attrs.get("property", "").lower() == "og:description"):
+            self.description = attrs.get("content", "").strip()[:500]
         if tag in self.BLOCK:
             self.parts.append("\n")
         if tag in ("h1", "h2", "h3"):
@@ -137,6 +168,96 @@ async def _robots(client: httpx.AsyncClient, base: str) -> RobotFileParser:
     return parser
 
 
+def _spa_api_routes(script: str) -> list[str]:
+    """Find public content-list routes used by common client-rendered catalogs."""
+    routes = []
+    for match in re.finditer(r"\.request\(\s*([`\"'])(/[^`\"']*)\1", script):
+        route = re.sub(r"\$\{[^}]*\}.*$", "", match.group(2)).rstrip("?&/")
+        if re.fullmatch(r"/(?:components|products|services|courses|docs|documentation|articles|blog|faq|pricing|categories)", route, re.I):
+            if route not in routes:
+                routes.append(route)
+    return routes
+
+
+def _catalog_text(value, key="") -> list[str]:
+    """Keep useful human-readable catalog fields and skip source code and IDs."""
+    lines = []
+    allowed = {"name", "title", "slug", "description", "documentation", "category", "tags",
+               "version", "currentversion", "changelog", "dependencies", "peerdependencies",
+               "props", "required", "defaultvalue", "type"}
+    containers = {"data", "result", "items", "components", "categories", "latestrelease", "versions"}
+    if isinstance(value, dict):
+        for child_key, child in value.items():
+            normalized = re.sub(r"[^a-z]", "", child_key.lower())
+            if normalized in allowed:
+                lines.extend(_catalog_text(child, child_key))
+            elif normalized in containers:
+                lines.extend(_catalog_text(child, child_key))
+    elif isinstance(value, list):
+        for child in value:
+            lines.extend(_catalog_text(child, key))
+    elif isinstance(value, (str, int, float, bool)) and key:
+        normalized = re.sub(r"[^a-z]", "", key.lower())
+        if normalized in allowed:
+            text = str(value).strip()
+            if text and len(text) < 1800 and not text.startswith(("import ", "export ", "function ", "const ")):
+                lines.append(f"{key}: {text}")
+    return lines
+
+
+async def _fetch_json(client: httpx.AsyncClient, url: str):
+    """Fetch a same-site JSON endpoint while retaining the crawler's SSRF protections."""
+    for _ in range(4):
+        host = urlparse(url).hostname or ""
+        if not await asyncio.to_thread(_host_is_public, host):
+            return None
+        async with client.stream("GET", url) as response:
+            if response.status_code in (301, 302, 303, 307, 308) and response.headers.get("location"):
+                url = urljoin(url, response.headers["location"])
+                continue
+            if response.status_code >= 400 or "json" not in response.headers.get("content-type", "").lower():
+                return None
+            chunks, size = [], 0
+            async for chunk in response.aiter_bytes():
+                size += len(chunk)
+                if size > MAX_BYTES:
+                    return None
+                chunks.append(chunk)
+            try:
+                return response.url, json.loads(b"".join(chunks))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                return None
+    return None
+
+
+async def _spa_catalog_sources(client: httpx.AsyncClient, page_url: str, parser: _TextExtractor) -> list[dict]:
+    """Read public JSON catalog data exposed by JavaScript-rendered sites."""
+    host = urlparse(page_url).hostname
+    routes = []
+    for src in parser.scripts[:12]:
+        asset_url = urljoin(page_url, src)
+        if urlparse(asset_url).hostname != host:
+            continue
+        asset = await _fetch_text_asset(client, asset_url)
+        if not asset:
+            continue
+        routes.extend(route for route in _spa_api_routes(asset[1]) if route not in routes)
+        if len(routes) >= 4:
+            break
+
+    sources = []
+    for route in routes[:4]:
+        result = await _fetch_json(client, urljoin(page_url, "/api" + route))
+        if not result:
+            continue
+        source_url, data = result
+        lines = _catalog_text(data)
+        text = "\n".join(dict.fromkeys(lines))
+        if len(text) > 80:
+            sources.append({"url": str(source_url), "title": f"Website catalog: {route.strip('/').title()}", "text": text[:MAX_PAGE_CHARS]})
+    return sources
+
+
 def _rank(link: str) -> int:
     path = urlparse(link).path.lower()
     score = sum(5 for word in PRIORITY_WORDS if word in path)
@@ -156,6 +277,7 @@ async def read_website(url: str, max_pages: int = MAX_PAGES) -> list[dict]:
         if not first:
             raise WebReadError("Couldn't read that website (it may block bots or not be a normal web page).")
         pages, queue, seen = [], [first], {start, first[0]}
+        first_parser = None
         candidates: list[str] = []
         while queue and len(pages) < max_pages:
             page_url, html = queue.pop(0)
@@ -164,7 +286,12 @@ async def read_website(url: str, max_pages: int = MAX_PAGES) -> list[dict]:
                 parser.feed(html)
             except Exception:
                 continue
-            text = parser.text()[:MAX_PAGE_CHARS]
+            if first_parser is None:
+                first_parser = parser
+            text = parser.text()
+            if len(text) < 80 and parser.description:
+                text = " ".join(x for x in (parser.title.strip(), parser.description) if x)
+            text = text[:MAX_PAGE_CHARS]
             if len(text) > 80:
                 pages.append({"url": page_url, "title": (parser.title or page_url).strip()[:120], "text": text})
             for href in parser.links:
@@ -179,6 +306,8 @@ async def read_website(url: str, max_pages: int = MAX_PAGES) -> list[dict]:
                 batch, candidates = candidates[: max_pages - len(pages)], candidates[max_pages - len(pages):]
                 results = await asyncio.gather(*(_fetch(client, link) for link in batch), return_exceptions=True)
                 queue.extend(r for r in results if isinstance(r, tuple))
+        if first_parser is not None and first_parser.scripts:
+            pages.extend(await _spa_catalog_sources(client, first[0], first_parser))
         if not pages:
             raise WebReadError("That website didn't have readable text (it may load everything with JavaScript).")
         return pages
