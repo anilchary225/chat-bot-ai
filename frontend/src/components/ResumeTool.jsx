@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "framer-motion";
 import {
-  ArrowRight, Check, CheckCircle2, ClipboardPaste, Copy, Download, FileText, Lightbulb,
+  ArrowRight, Check, CheckCircle2, ClipboardPaste, Copy, Download, FileText, Lightbulb, Trash2,
   LoaderCircle, RotateCcw, Sparkles, Target, Upload, X, XCircle
 } from "lucide-react";
 import Orb from "./Orb";
@@ -216,6 +216,7 @@ export default function ResumeTool({ api }) {
 
   const hasResume = mode === "file" ? !!file : pasted.trim().length >= 50;
   const canAnalyze = hasResume && jd.trim().length >= 30 && stage !== "analyzing" && stage !== "tailoring";
+  const canTailorGeneral = hasResume && stage !== "analyzing" && stage !== "tailoring";
 
   const pickFile = (f) => {
     if (!f) return;
@@ -267,6 +268,27 @@ export default function ResumeTool({ api }) {
     }
   };
 
+  const runGeneralTailor = async () => {
+    if (!canTailorGeneral) return;
+    setStage("tailoring");
+    setError("");
+    setAnalysis(null);
+    setResult(null);
+    try {
+      const form = new FormData();
+      if (mode === "file") form.append("file", file);
+      else form.append("resume_text", pasted.trim());
+      const res = await fetch(`${api}/api/resume/tailor-general`, { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Couldn't generate the resume.");
+      setResult(data);
+      setStage("done");
+    } catch (err) {
+      setError(err.message || "Couldn't generate the resume.");
+      setStage("input");
+    }
+  };
+
   const download = async (format) => {
     setDownloading(format);
     try {
@@ -307,8 +329,7 @@ export default function ResumeTool({ api }) {
       <motion.div className="rt-hero" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
         <span className="rt-badge"><Target size={14} /> Resume ATS Match</span>
         <h1>Tailor your resume to <span className="rt-grad">any job</span></h1>
-        <p>Upload your resume and paste the job description. Zenoxi scores the match, finds missing keywords, and rewrites
-          your resume into a clean ATS-friendly template, without inventing experience.</p>
+        <p>Tailor your resume to a specific job description or create a general ATS-friendly draft without one. Zenoxi keeps your experience grounded in the resume you provide.</p>
       </motion.div>
 
       <div className="rt-inputs">
@@ -380,6 +401,10 @@ export default function ResumeTool({ api }) {
           {stage === "analyzing" ? <LoaderCircle size={17} className="spin" /> : <Target size={17} />}
           {stage === "analyzing" ? "Analyzing…" : analysis ? "Re-analyze" : "Analyze match"}
         </motion.button>
+        <motion.button type="button" className="rt-secondary" disabled={!canTailorGeneral} onClick={runGeneralTailor} whileHover={canTailorGeneral ? { scale: 1.03 } : undefined} whileTap={canTailorGeneral ? { scale: 0.97 } : undefined}>
+          {stage === "tailoring" && !analysis ? <LoaderCircle size={17} className="spin" /> : <Sparkles size={17} />}
+          {stage === "tailoring" && !analysis ? "Building resume…" : "Tailor without a job description"}
+        </motion.button>
         {(analysis || file || jd) && stage !== "tailoring" && (
           <button type="button" className="rt-ghost" onClick={reset}><RotateCcw size={15} /> Start over</button>
         )}
@@ -423,7 +448,23 @@ export default function ResumeTool({ api }) {
 
         {stage === "done" && result && (
           <motion.section key="done" className="rt-results" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="rt-compare">
+            {result.mode === "general" ? (
+              <div className="rt-score-text rt-general-result">
+                <h2>Your general resume draft is ready</h2>
+                <p>No job description was used, so this result has no job-match score. Add a job description to check role-specific keyword coverage.</p>
+                <p className="rt-note">Use “Clear resume data” to remove the uploaded or pasted resume and generated draft from this page. A PDF you downloaded stays in your device’s downloads.</p>
+                <div className="rt-download">
+                  <motion.button type="button" className="rt-primary" onClick={() => download("pdf")} disabled={!!downloading} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                    {downloading === "pdf" ? <LoaderCircle size={16} className="spin" /> : <Download size={16} />} Download PDF
+                  </motion.button>
+                  <button type="button" className="rt-ghost" onClick={() => download("docx")} disabled={!!downloading}>
+                    {downloading === "docx" ? <LoaderCircle size={15} className="spin" /> : <FileText size={15} />} Word (.docx)
+                  </button>
+                  <button type="button" className="rt-ghost" onClick={copyText}>{copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "Copied" : "Copy text"}</button>
+                  <button type="button" className="rt-ghost" onClick={reset}><Trash2 size={15} /> Clear resume data</button>
+                </div>
+              </div>
+            ) : <div className="rt-compare">
               <ScoreRing value={result.before.score} label="before" size={112} />
               <motion.span className="rt-arrow" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.8 }}><ArrowRight size={22} /></motion.span>
               <ScoreRing value={result.after.score} label="after" size={112} delay={0.6} />
@@ -439,9 +480,10 @@ export default function ResumeTool({ api }) {
                   </button>
                   <button type="button" className="rt-ghost" onClick={copyText}>{copied ? <Check size={15} /> : <Copy size={15} />} {copied ? "Copied" : "Copy text"}</button>
                   <button type="button" className="rt-ghost" onClick={() => setStage("analyzed")}><RotateCcw size={15} /> Back</button>
+                  <button type="button" className="rt-ghost" onClick={reset}><Trash2 size={15} /> Clear resume data</button>
                 </div>
               </div>
-            </div>
+            </div>}
 
             <div className="rt-two">
               {result.resume.changes.length > 0 && (
@@ -452,12 +494,12 @@ export default function ResumeTool({ api }) {
                   ))}</ul>
                 </div>
               )}
-              {(result.resume.suggestions.length > 0 || result.after.missing.length > 0) && (
+              {(result.resume.suggestions.length > 0 || (result.mode !== "general" && result.after.missing.length > 0)) && (
                 <div className="rt-panel warn">
-                  <h3><Lightbulb size={16} /> Add only if true</h3>
-                  <p>These job keywords aren't backed by your current resume, so Zenoxi didn't add them. If you have this experience, add it in your own words:</p>
+                  <h3><Lightbulb size={16} /> {result.mode === "general" ? "Details to review" : "Add only if true"}</h3>
+                  <p>{result.mode === "general" ? "Review these suggestions and add details only when they accurately describe your experience:" : "These job keywords aren't backed by your current resume, so Zenoxi didn't add them. If you have this experience, add it in your own words:"}</p>
                   <div className="kw-chips">
-                    {[...new Set([...result.resume.suggestions, ...result.after.missing])].slice(0, 14).map((s) => <span key={s} className="kw-chip miss">{s}</span>)}
+                    {[...new Set([...result.resume.suggestions, ...(result.mode === "general" ? [] : result.after.missing)])].slice(0, 14).map((s) => <span key={s} className="kw-chip miss">{s}</span>)}
                   </div>
                 </div>
               )}

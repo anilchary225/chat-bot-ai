@@ -374,6 +374,50 @@ async def resume_tailor(payload: TailorRequest, user: dict = Depends(current_use
     return {"resume": tailored, "text": text, "before": before, "after": after,
             "layout": {"scale": scale, "one_page": one_page}}
 
+@app.post("/api/resume/tailor-general")
+async def resume_tailor_general(
+    file: UploadFile | None = File(None),
+    resume_text: str | None = Form(None, max_length=60000),
+    user: dict = Depends(current_user),
+):
+    if file is not None:
+        data = await file.read(MAX_UPLOAD_BYTES + 1)
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="Resume files can be up to 10 MB.")
+        try:
+            parsed = await asyncio.to_thread(extract_text, Path(file.filename or "resume").name, data)
+        except DocumentError as exc:
+            raise HTTPException(status_code=422, detail=str(exc))
+        source_text = parsed["text"]
+    else:
+        source_text = (resume_text or "").strip()
+    if len(source_text) < 50:
+        raise HTTPException(status_code=422, detail="Add your resume as a file or paste at least a few lines of it.")
+    source_text = re.sub(r"^\[Page \d+\]\n", "", source_text, flags=re.M)
+
+    messages = resume_tool.general_tailor_messages(source_text)
+    last_error: Exception | None = None
+    for _ in range(2):  # retry once if a free model returns malformed JSON
+        try:
+            raw = await complete_chat(messages, temperature=0.3, max_tokens=4000)
+            tailored = resume_tool.clean_resume(resume_tool.parse_json(raw))
+            if not (tailored["experience"] or tailored["education"] or tailored["skills"]):
+                raise ValueError("Model returned an empty resume")
+            break
+        except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+            logger.exception("General resume tailoring request failed")
+            raise HTTPException(status_code=502, detail=openrouter_error_message(exc))
+        except Exception as exc:
+            logger.warning("General resume tailoring returned unusable output: %s", exc)
+            last_error = exc
+    else:
+        raise HTTPException(status_code=502, detail=openrouter_error_message(last_error))
+
+    text = resume_tool.resume_to_text(tailored)
+    _, scale, one_page = await asyncio.to_thread(resume_tool.render_pdf, tailored)
+    return {"mode": "general", "resume": tailored, "text": text,
+            "layout": {"scale": scale, "one_page": one_page}}
+
 def _resume_filename(resume: dict, ext: str) -> str:
     name = re.sub(r"[^A-Za-z0-9]+", "_", resume["name"] or "resume").strip("_") or "resume"
     return f"{name}_ATS_Resume.{ext}"
