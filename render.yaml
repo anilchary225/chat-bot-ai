@@ -18,6 +18,10 @@ services:
         value: openrouter/free
       - key: OPENROUTER_API_KEY
         sync: false
+      - key: OPENROUTER_API_KEY_2
+        sync: false
+      - key: OPENROUTER_API_KEY_3
+        sync: false
       - key: TAVILY_API_KEY
         sync: false
       - key: AUTH_SECRET

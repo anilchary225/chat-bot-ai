@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     openrouter_model: str = "openrouter/free"
     openrouter_api_key: str | None = None
+    openrouter_api_key_2: str | None = None
+    openrouter_api_key_3: str | None = None
     frontend_origin: str = "http://localhost:5173"
     tavily_api_key: str | None = None
     web_search_max_results: int = 5

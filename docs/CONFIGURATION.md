@@ -16,10 +16,26 @@ the `.env.example` files). In production set them in **Render → Environment** 
 | `MONGODB_URI` | ✅ | | MongoDB connection string (`mongodb+srv://…`). |
 | `MONGODB_DATABASE` | | `vac_ai_chat` | Database name. |
 | `OPENROUTER_API_KEY` | ✅ | | OpenRouter API key (`sk-or-…`). |
+| `OPENROUTER_API_KEY_2` | | | Optional second OpenRouter key, used when the primary key is rate-limited or unavailable. |
+| `OPENROUTER_API_KEY_3` | | | Optional third OpenRouter key, tried after the first two. |
 | `OPENROUTER_MODEL` | | `openrouter/free` | Model ID; the default picks an available free model. |
 | `OPENROUTER_BASE_URL` | | `https://openrouter.ai/api/v1` | OpenAI-compatible API base. |
 | `FRONTEND_ORIGIN` | ✅ prod | `http://localhost:5173` | Extra allowed CORS origin, e.g. `https://zenoxi.vercel.app`. |
 | `PUBLIC_FRONTEND_URL` | ✅ prod | `https://zenoxi.vercel.app` | Website address used in `/web` links and emails. |
+
+### OpenRouter key failover
+
+Set the keys in Render → Environment and in `backend/.env` locally. Zenoxi tries the primary key, then key 2, then
+key 3 for chat, website agents, resume tailoring and agent setup. Empty and duplicate keys are ignored.
+On quota errors, temporary failures or rejected keys, it tries the next key before any reply text is sent.
+Once streaming has begun, it reports an error instead of combining answers from different requests.
+Rate-limited keys are temporarily skipped, using OpenRouter's reset time when supplied; otherwise the cooldown is
+60 seconds. Cooldowns are local to each server worker and clear on restart. If all keys fail, the request fails.
+An agent owner's private key remains separate and does not use the shared platform backups.
+
+Keep `OPENROUTER_MODEL=openrouter/free` to request the free router. Every account's limits still apply;
+keys from the same account share its quota. Additional accounts or keys do not guarantee additional capacity.
+See [OpenRouter limits](https://openrouter.ai/docs/api_reference/limits).
 
 ### Accounts and email
 
