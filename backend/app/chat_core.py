@@ -72,7 +72,8 @@ def system_prompt(channel: str = "web") -> str:
         f"Today's date is {today} (UTC). "
         "Answer clearly and accurately. If you are unsure, say so. "
         "Reply in the user's language: if they write in Telugu, Hindi, Tamil or another language (or in that language "
-        "typed with English letters, like 'ela unnav'), reply the same way. "
+        "typed with English letters, like 'ela unnav'), reply the same way. In particular, if Telugu is typed in Latin/English "
+        "letters (Tenglish), reply in Tenglish using Latin letters only; do not switch to Telugu script unless the user asks for it. "
         "Your built-in knowledge stops at your training cutoff, so for recent events, "
         "prices, versions or news, say your information may be out of date unless "
         "web search results are provided." + style + platform_guidance
