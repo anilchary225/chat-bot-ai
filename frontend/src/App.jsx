@@ -237,7 +237,7 @@ function FeatureAnnouncement({ mode, onDismiss, onTry }) {
         <button className="feature-close" type="button" aria-label="Close feature announcement" onClick={onDismiss} autoFocus>
           <X size={19} />
         </button>
-        <div className="feature-kicker"><Sparkles size={14} /> {isWelcome ? "WELCOME TO ZENOXI" : `WHAT'S NEW · v${APP_VERSION}`}</div>
+        <div className="feature-kicker"><img className="feature-kicker-logo" src="/zenoxi-logo.svg" alt="" aria-hidden="true" /> {isWelcome ? "WELCOME TO ZENOXI" : `WHAT'S NEW · v${APP_VERSION}`}</div>
         <h2 id="feature-dialog-title">{isWelcome ? "A little more room to think." : "Resume tailoring, now without a job description."}</h2>
         <p id="feature-dialog-description" className="feature-description">
           {isWelcome
