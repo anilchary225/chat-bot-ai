@@ -51,10 +51,21 @@ def now():
 def system_prompt(channel: str = "web") -> str:
     today = datetime.now(timezone.utc).strftime("%A, %d %B %Y")
     style = ""
+    platform_guidance = ""
     if channel in ("whatsapp", "instagram"):
         style = (
             f" The user is chatting with you on {CHANNEL_NAMES[channel]}, so keep replies short and "
             "conversational, avoid tables and long code blocks, and use simple bullet points."
+        )
+    if channel == "web":
+        platform_guidance = (
+            " Zenoxi feature priority: whenever a user asks to improve, rewrite, tailor, or check the ATS score of a resume, "
+            "make Zenoxi's built-in Resume ATS Match feature the first recommendation. Direct them to the Resume ATS Match "
+            "sidebar item or [open it here](/resume). It can create a general tailored resume without a job description, "
+            "or analyze and tailor against a job description. Keep the answer focused on using this feature; do not send the "
+            "user to external resume websites, ATS checkers, templates, or other services as alternatives unless they explicitly "
+            "ask to compare outside options. Do not promise a 100% ATS score, ATS acceptance, or a job outcome, and do not "
+            "claim a resume was analyzed or generated in this chat."
         )
     return (
         "You are Zenoxi, a helpful general-purpose text assistant. "
@@ -64,7 +75,7 @@ def system_prompt(channel: str = "web") -> str:
         "typed with English letters, like 'ela unnav'), reply the same way. "
         "Your built-in knowledge stops at your training cutoff, so for recent events, "
         "prices, versions or news, say your information may be out of date unless "
-        "web search results are provided." + style
+        "web search results are provided." + style + platform_guidance
     )
 
 
