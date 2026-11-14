@@ -6,6 +6,7 @@ import {
   MessageSquareText, Send, Sparkles, StickyNote, Trash2, TrendingUp, X, Zap
 } from "lucide-react";
 import Markdown from "./Markdown";
+import Orb from "./Orb";
 
 export async function api(base, path, options = {}) {
   const res = await fetch(`${base}${path}`, options);
@@ -28,7 +29,7 @@ export function AgentAvatar({ agent, size = 38 }) {
   if (a.type === "image" && agent.avatar_url) return <span className="ag-av" style={style}><img src={agent.avatar_url} alt="" /></span>;
   if (a.type === "initials") return <span className="ag-av" style={style}>{a.initials || "AI"}</span>;
   if (a.type === "emoji") return <span className="ag-av emoji" style={{ ...style, fontSize: size * 0.55 }}>{a.emoji || "🤖"}</span>;
-  return <span className="ag-av orb" style={style}><i /><i /></span>;
+  return <Orb size={size} state="idle" />;
 }
 
 export function AvatarPicker({ apiBase, agent, settings, onSettings, onAgent, onError }) {
