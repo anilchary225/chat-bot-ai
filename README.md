@@ -98,7 +98,7 @@ API docs (Swagger UI) are served at http://127.0.0.1:8000/docs.
 
 ## Project status
 
-Zenoxi is in active development (version 0.5.0). The website is live for everyone. Instagram works for accounts added as
+Zenoxi is in active development (version 0.6.0). The website is live for everyone. Instagram works for accounts added as
 testers, and WhatsApp needs Meta business verification before real messages are delivered
 (see [Messaging setup](docs/MESSAGING_SETUP.md#going-live-for-everyone)).
 

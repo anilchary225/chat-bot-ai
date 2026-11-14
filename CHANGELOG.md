@@ -5,6 +5,16 @@ All notable changes to Zenoxi are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-14
+
+### Added
+- First-use feature introduction and version-based "What's new" announcements in Zenoxi, available to all users.
+- General resume tailoring without a job description, plus a clear-resume-data action.
+
+### Changed
+- Telugu typed in Latin letters receives Tenglish replies in Latin letters; assistants identify themselves as Zenoxi.
+- Zenoxi chat prioritizes its built-in Resume ATS Match feature for resume improvement, tailoring and ATS-score requests.
+
 ## [0.5.0] - 2026-11-12
 
 ### Added

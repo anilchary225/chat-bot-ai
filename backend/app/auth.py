@@ -64,11 +64,13 @@ def normalize_email(email: str) -> str:
 
 
 def serialize_user(user: dict) -> dict:
+    created_at = user.get("created_at")
     return {
         "id": str(user["_id"]),
         "email": user["email"],
         "name": user.get("name") or user["email"].split("@")[0],
         "picture": user.get("picture"),
+        "created_at": created_at.isoformat() if hasattr(created_at, "isoformat") else created_at,
     }
 
 

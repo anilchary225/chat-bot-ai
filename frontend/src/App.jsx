@@ -4,7 +4,7 @@ import {
 } from "framer-motion";
 import {
   Plus, MessageSquare, Trash2, ArrowUp, PanelLeftClose, PanelLeftOpen, LoaderCircle,
-  Copy, Check, AlertCircle, Menu, X, Sun, Moon, Search, Lightbulb, Code2, Rocket, PenLine, ArrowDown, Globe, Info, Paperclip, Upload, Briefcase, LogOut, Bot, ShieldCheck
+  Copy, Check, AlertCircle, Menu, X, Sun, Moon, Search, Lightbulb, Code2, Rocket, PenLine, ArrowDown, Globe, Info, Paperclip, Upload, Briefcase, FileText, LogOut, Bot, ShieldCheck, Sparkles, ArrowRight
 } from "lucide-react";
 import Orb from "./components/Orb";
 import Aurora from "./components/Aurora";
@@ -18,10 +18,34 @@ import { forgetKey, keyHeaders, listHeaders, saveKey } from "./chatKeys";
 import { AttachmentChip, ACCEPT, MAX_FILE_BYTES, isSupported } from "./components/Attachments";
 
 import { API } from "./config";
+import appPackage from "../package.json";
 
 const MOBILE_QUERY = "(max-width: 700px)";
 const spring = { type: "spring", stiffness: 380, damping: 32 };
 const softSpring = { type: "spring", stiffness: 220, damping: 26 };
+// Bump this version and replace RELEASE_FEATURES for each user-facing release.
+const APP_VERSION = appPackage.version;
+const RELEASED_AT = Date.parse("2026-11-14T00:00:00+05:30");
+const RELEASE_FEATURES = [
+  { icon: Briefcase, title: "Tailor without a job description", text: "Create a general resume draft from your existing experience, with no job description required." },
+  { icon: FileText, title: "Export your resume", text: "Download your draft as PDF or Word, or copy its text." },
+  { icon: Trash2, title: "Clear resume data", text: "Remove the uploaded or pasted resume and generated draft from the page when you finish." },
+];
+
+function getInitialAnnouncement(user) {
+  try {
+    const account = encodeURIComponent(user?.id || user?.email || "user");
+    const welcomed = localStorage.getItem(`zenoxi:onboarding:${account}`) === "1";
+    const seenVersion = localStorage.getItem(`zenoxi:release:${account}`);
+    if (!welcomed) {
+      const createdAt = Date.parse(user?.created_at || "");
+      return Number.isFinite(createdAt) && createdAt < RELEASED_AT ? "updates" : "welcome";
+    }
+    return seenVersion === APP_VERSION ? "" : "updates";
+  } catch {
+    return "";
+  }
+}
 
 const SUGGESTIONS = [
   { icon: Lightbulb, title: "Explain it simply", text: "Explain a difficult topic in simple terms", tone: "ember" },
@@ -184,6 +208,77 @@ function Welcome({ onPick, name }) {
   );
 }
 
+function FeatureAnnouncement({ mode, onDismiss, onTry }) {
+  const isWelcome = mode === "welcome";
+  const welcomeFeatures = [
+    { icon: MessageSquare, title: "AI chat", text: "Ask questions, explore ideas, and get help with everyday work.", action: "Try chat", view: "chat" },
+    { icon: Briefcase, title: "Resume ATS Match", text: "Check a resume against a job description, or tailor one without it.", action: "Try resume tools", view: "resume" },
+    { icon: Bot, title: "Website Agents", text: "Create an AI assistant that can answer visitors on your website.", action: "Explore agents", view: "agents" },
+  ];
+  return (
+    <motion.div
+      className="feature-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+    >
+      <motion.section
+        className="feature-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="feature-dialog-title"
+        aria-describedby="feature-dialog-description"
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 14, scale: 0.98 }}
+        transition={softSpring}
+      >
+        <button className="feature-close" type="button" aria-label="Close feature announcement" onClick={onDismiss} autoFocus>
+          <X size={19} />
+        </button>
+        <div className="feature-kicker"><Sparkles size={14} /> {isWelcome ? "WELCOME TO ZENOXI" : `WHAT'S NEW · v${APP_VERSION}`}</div>
+        <h2 id="feature-dialog-title">{isWelcome ? "A little more room to think." : "Resume tailoring, now without a job description."}</h2>
+        <p id="feature-dialog-description" className="feature-description">
+          {isWelcome
+            ? "Meet the tools that help you think, create, and move forward. Everything here is available to every Zenoxi user."
+            : "Create a general ATS-friendly resume draft from your existing resume, then download it or copy the text. No job description needed."}
+        </p>
+        <div className={`feature-grid ${isWelcome ? "welcome-grid" : "release-grid"}`}>
+          {(isWelcome ? welcomeFeatures : RELEASE_FEATURES.map((feature) => ({ ...feature, action: null, view: null }))).map(({ icon: Icon, title, text, action, view }, index) => (
+            <motion.article
+              className="feature-card"
+              key={title}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.08 + index * 0.06 }}
+            >
+              <span className="feature-icon"><Icon size={18} /></span>
+              <h3>{title}</h3>
+              <p>{text}</p>
+              {action && (
+                <button type="button" className="feature-link" onClick={() => onTry(view)}>
+                  {action}<ArrowRight size={15} />
+                </button>
+              )}
+            </motion.article>
+          ))}
+        </div>
+        {!isWelcome && <div className="feature-free"><ShieldCheck size={15} /> Included for everyone</div>}
+        <div className="feature-footer">
+          <span>{isWelcome ? "Free for everyone · No setup needed" : `Zenoxi ${APP_VERSION}`}</span>
+          {!isWelcome && (
+            <button type="button" className="feature-primary" onClick={() => onTry("resume")}>
+              Try resume tools<ArrowRight size={16} />
+            </button>
+          )}
+          {isWelcome && <button type="button" className="feature-skip" onClick={onDismiss}>Maybe later</button>}
+        </div>
+      </motion.section>
+    </motion.div>
+  );
+}
+
 function App({ user, onSignOut }) {
   const isMobile = useIsMobile();
   const [chats, setChats] = useState([]);
@@ -205,6 +300,7 @@ function App({ user, onSignOut }) {
   const [attachments, setAttachments] = useState([]);
   // Direct addresses: /admin, /agents and /resume open those views.
   const [view, setView] = useState(() => ({ "/admin": "admin", "/agents": "agents", "/resume": "resume" })[window.location.pathname] || "chat");
+  const [announcement, setAnnouncement] = useState(() => getInitialAnnouncement(user));
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
   const dragDepth = useRef(0);
@@ -214,6 +310,28 @@ function App({ user, onSignOut }) {
   const [atBottom, setAtBottom] = useState(true);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+
+  const finishAnnouncement = (targetView) => {
+    try {
+      const account = encodeURIComponent(user?.id || user?.email || "user");
+      localStorage.setItem(`zenoxi:onboarding:${account}`, "1");
+      localStorage.setItem(`zenoxi:release:${account}`, APP_VERSION);
+    } catch { /* the notice can still be dismissed if storage is unavailable */ }
+    setAnnouncement("");
+    if (targetView) setView(targetView);
+  };
+
+  useEffect(() => {
+    if (!announcement) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event) => { if (event.key === "Escape") finishAnnouncement(); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [announcement]);
 
   useEffect(() => {
     try { localStorage.setItem("zenoxi-web", webSearch ? "1" : "0"); } catch { /* ignore */ }
@@ -849,6 +967,15 @@ function App({ user, onSignOut }) {
               </AnimatePresence>
             </div>
             <div className="topbar-actions">
+              <button
+                type="button"
+                className="icon-btn whats-new-btn"
+                onClick={() => setAnnouncement("updates")}
+                aria-label="Open What's new"
+                title="What's new"
+              >
+                <Sparkles size={17} />
+              </button>
               {view === "chat" && activeId && (
                 <ContinueOn
                   api={API}
@@ -1196,6 +1323,17 @@ function App({ user, onSignOut }) {
                 </div>
               </motion.div>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence initial={false}>
+          {announcement && (
+            <FeatureAnnouncement
+              key={announcement}
+              mode={announcement}
+              onDismiss={() => finishAnnouncement()}
+              onTry={(targetView) => finishAnnouncement(targetView)}
+            />
           )}
         </AnimatePresence>
       </div>
