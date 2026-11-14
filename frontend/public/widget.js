@@ -129,9 +129,9 @@
 .launcher.close .lin,.launcher.close .ring{display:none}.lin{position:absolute;inset:0;display:grid;place-items:center;border-radius:50%;overflow:hidden}\
 .launcher.custom{background:var(--c)}.avimg{width:100%;height:100%;object-fit:cover}.avtxt{color:#fff;font-weight:800;font-size:20px;letter-spacing:.5px}.avemoji{font-size:28px;line-height:1}\
 .av.custom{display:grid;place-items:center;overflow:hidden;background:#fff}.av.custom .avtxt{color:var(--c);font-size:14px}.av.custom .avemoji{font-size:20px}.launcher .x{display:none;color:#fff;font-size:26px;line-height:62px}.launcher.close .x{display:block}\
-.bubble{position:absolute;bottom:76px;right:0;width:max-content;max-width:240px;padding:11px 14px;background:#fff;border-radius:16px 16px 4px 16px;box-shadow:0 10px 30px -8px rgba(0,0,0,.3);font-size:14px;line-height:1.4;animation:pop .35s cubic-bezier(.2,.8,.2,1);cursor:pointer}\
+.bubble{position:absolute;bottom:76px;right:0;width:max-content;max-width:min(300px,calc(100vw - 56px));min-width:0;padding:13px 42px 13px 16px;overflow-wrap:anywhere;background:#fff;border-radius:18px;box-shadow:0 10px 30px -8px rgba(0,0,0,.3);font-size:14px;line-height:1.45;animation:pop .35s cubic-bezier(.2,.8,.2,1);cursor:pointer}\
 .zx.left .bubble{right:auto;left:0;border-radius:16px 16px 16px 4px}\
-.bubble button{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border:0;border-radius:50%;background:#1c1714;color:#fff;font-size:12px;cursor:pointer}\
+.bubble button{position:absolute;top:7px;right:7px;display:grid;width:26px;height:26px;place-items:center;border:0;border-radius:50%;background:#1c1714;color:#fff;font-size:14px;line-height:1;cursor:pointer}\
 @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.95)}to{opacity:1;transform:none}}\
 .panel{position:absolute;bottom:78px;right:0;width:370px;height:min(600px,calc(100vh - 110px));display:flex;flex-direction:column;overflow:hidden;background:#faf7f2;border-radius:22px;box-shadow:0 24px 70px -12px rgba(0,0,0,.4),0 0 0 1px rgba(0,0,0,.06);animation:pop .3s cubic-bezier(.2,.8,.2,1)}\
 .zx.left .panel{right:auto;left:0}\
