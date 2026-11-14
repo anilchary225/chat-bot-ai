@@ -177,7 +177,7 @@ export default function AuthScreen({ api, onSignedIn }) {
           <h1>Meet <span className="rt-grad">Zenoxi</span></h1>
           <p>One workspace for AI chat, resume tailoring, and helpful agents for your website.</p>
           <ul>
-            {["AI chat with web search and documents", "Resume ATS match and tailoring, with or without a job description", "Website agents that answer your visitors"].map((item, i) => (
+            {["AI chat on Zenoxi and Instagram, with /web to continue the same conversation here", "Resume ATS match and tailoring, with or without a job description", "Website agents that answer your visitors"].map((item, i) => (
               <motion.li key={item} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + i * 0.1 }}>
                 <ShieldCheck size={15} /> {item}
               </motion.li>

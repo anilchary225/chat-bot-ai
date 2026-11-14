@@ -1,11 +1,12 @@
 # WhatsApp and Instagram setup
 
-Zenoxi can answer on WhatsApp and Instagram, and every chat is shared with the website:
+Zenoxi can answer in Instagram DMs and WhatsApp, and conversations can continue in the Zenoxi web app:
 
 - **Website → app:** in a chat, tap **Continue on…**. WhatsApp opens with `link CODE` already typed: send it. On
   Instagram, send `link CODE` to your Zenoxi account. The conversation (with its history and files) continues there.
-- **App → website:** send `/web` in WhatsApp or Instagram. Zenoxi replies with a private link; open it while signed in
-  and the chat is added to your account.
+- **Instagram → Zenoxi app:** send `/web` in Instagram. Zenoxi replies with a private link; open it while signed in
+  to see that same conversation in the app. New messages sync between Instagram and the app.
+- **WhatsApp → website:** send `/web` in WhatsApp. Zenoxi replies with a private link to the same conversation.
 - Other commands: `/new` (new chat), `/search <question>` (answer with live web results), `/help`.
 - On WhatsApp you can also send a PDF or Word file and ask questions about it.
 

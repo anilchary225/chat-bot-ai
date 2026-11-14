@@ -27,7 +27,7 @@ const softSpring = { type: "spring", stiffness: 220, damping: 26 };
 const APP_VERSION = appPackage.version;
 const RELEASED_AT = Date.parse("2026-11-14T00:00:00+05:30");
 const PRODUCT_FEATURES = [
-  { icon: MessageSquare, title: "AI Chat", text: "Ask questions, explore ideas, and get help with everyday work.", action: "Try chat", view: "chat" },
+  { icon: MessageSquare, title: "AI chat, anywhere", text: "Chat here or in Instagram DMs. Send /web in Instagram to continue the same conversation in Zenoxi.", action: "Try chat", view: "chat" },
   { icon: Briefcase, title: "Resume ATS Match", text: "Check a resume against a job description or tailor it without one.", action: "Try resume tools", view: "resume" },
   { icon: Bot, title: "Website Agents", text: "Create a website assistant, add knowledge, and help answer visitor questions.", action: "Explore agents", view: "agents" },
 ];

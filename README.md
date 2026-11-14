@@ -28,7 +28,7 @@
 | 📄 | **Documents** | Attach PDF, Word, text, CSV, JSON or code files; Zenoxi reads them and answers questions about them. |
 | 💼 | **Resume ATS Match** | Scores a resume against a job description, lists missing keywords and formatting issues, and generates a tailored one-page resume (PDF/DOCX) without inventing experience. |
 | 🤖 | **Website Agents** | Businesses build their own AI assistant by chatting with Zenoxi, then add a floating chat widget to their website that answers from their information and collects inquiries. Owners get a leads dashboard with Excel export, email alerts and confirmations (with brochures), reports, analytics, avatars and a Hindi/Telugu/Tamil widget. |
-| 🔁 | **One chat everywhere** | Continue the same conversation on the website, Instagram DMs and WhatsApp, with link codes and live sync. |
+| 🔁 | **One chat everywhere** | Continue the same conversation on the website, Instagram DMs and WhatsApp, with link codes and live sync. In Instagram, send `/web` to reopen that chat in Zenoxi. |
 | 🛡️ | **Admin dashboard** | For the platform owner at `/admin`: users (block, delete), agents, email log, system health and 14-day activity. |
 | 🔐 | **Accounts** | "Continue with Google" or passwordless sign-in with a 6-digit email code. Every user only sees their own chats. |
 | 🎨 | **Animated UI** | React + Framer Motion interface with light/dark themes, a mobile layout and an animated orb assistant. |

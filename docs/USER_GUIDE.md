@@ -1,6 +1,6 @@
 # Zenoxi user guide
 
-Zenoxi is an AI assistant you can use on the website, in Instagram DMs and on WhatsApp, with one shared conversation.
+Zenoxi is an AI assistant you can use on the website and in Instagram DMs, with one shared conversation. In Instagram, send `/web` to get a private link that opens that same chat in Zenoxi; new messages sync between both.
 
 ## Getting started
 
