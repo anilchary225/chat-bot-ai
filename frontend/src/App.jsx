@@ -26,10 +26,10 @@ const softSpring = { type: "spring", stiffness: 220, damping: 26 };
 // Bump this version and replace RELEASE_FEATURES for each user-facing release.
 const APP_VERSION = appPackage.version;
 const RELEASED_AT = Date.parse("2026-11-14T00:00:00+05:30");
-const RELEASE_FEATURES = [
-  { icon: Briefcase, title: "Tailor without a job description", text: "Create a general resume draft from your existing experience, with no job description required." },
-  { icon: FileText, title: "Export your resume", text: "Download your draft as PDF or Word, or copy its text." },
-  { icon: Trash2, title: "Clear resume data", text: "Remove the uploaded or pasted resume and generated draft from the page when you finish." },
+const PRODUCT_FEATURES = [
+  { icon: MessageSquare, title: "AI Chat", text: "Ask questions, explore ideas, and get help with everyday work.", action: "Try chat", view: "chat" },
+  { icon: Briefcase, title: "Resume ATS Match", text: "Check a resume against a job description or tailor it without one.", action: "Try resume tools", view: "resume" },
+  { icon: Bot, title: "Website Agents", text: "Create a website assistant, add knowledge, and help answer visitor questions.", action: "Explore agents", view: "agents" },
 ];
 
 function getInitialAnnouncement(user) {
@@ -210,11 +210,6 @@ function Welcome({ onPick, name }) {
 
 function FeatureAnnouncement({ mode, onDismiss, onTry }) {
   const isWelcome = mode === "welcome";
-  const welcomeFeatures = [
-    { icon: MessageSquare, title: "AI chat", text: "Ask questions, explore ideas, and get help with everyday work.", action: "Try chat", view: "chat" },
-    { icon: Briefcase, title: "Resume ATS Match", text: "Check a resume against a job description, or tailor one without it.", action: "Try resume tools", view: "resume" },
-    { icon: Bot, title: "Website Agents", text: "Create an AI assistant that can answer visitors on your website.", action: "Explore agents", view: "agents" },
-  ];
   return (
     <motion.div
       className="feature-overlay"
@@ -238,14 +233,14 @@ function FeatureAnnouncement({ mode, onDismiss, onTry }) {
           <X size={19} />
         </button>
         <div className="feature-kicker"><img className="feature-kicker-logo" src="/zenoxi-logo.svg" alt="" aria-hidden="true" /> {isWelcome ? "WELCOME TO ZENOXI" : `WHAT'S NEW · v${APP_VERSION}`}</div>
-        <h2 id="feature-dialog-title">{isWelcome ? "A little more room to think." : "Resume tailoring, now without a job description."}</h2>
+        <h2 id="feature-dialog-title">{isWelcome ? "A little more room to think." : "Meet the tools inside Zenoxi."}</h2>
         <p id="feature-dialog-description" className="feature-description">
           {isWelcome
             ? "Meet the tools that help you think, create, and move forward. Everything here is available to every Zenoxi user."
-            : "Create a general ATS-friendly resume draft from your existing resume, then download it or copy the text. No job description needed."}
+            : `Try AI Chat, Resume ATS Match, or Website Agents. Resume tailoring without a job description is new in v${APP_VERSION}; all three features are available to everyone.`}
         </p>
         <div className={`feature-grid ${isWelcome ? "welcome-grid" : "release-grid"}`}>
-          {(isWelcome ? welcomeFeatures : RELEASE_FEATURES.map((feature) => ({ ...feature, action: null, view: null }))).map(({ icon: Icon, title, text, action, view }, index) => (
+          {PRODUCT_FEATURES.map(({ icon: Icon, title, text, action, view }, index) => (
             <motion.article
               className="feature-card"
               key={title}
@@ -267,11 +262,6 @@ function FeatureAnnouncement({ mode, onDismiss, onTry }) {
         {!isWelcome && <div className="feature-free"><ShieldCheck size={15} /> Included for everyone</div>}
         <div className="feature-footer">
           <span>{isWelcome ? "Free for everyone · No setup needed" : `Zenoxi ${APP_VERSION}`}</span>
-          {!isWelcome && (
-            <button type="button" className="feature-primary" onClick={() => onTry("resume")}>
-              Try resume tools<ArrowRight size={16} />
-            </button>
-          )}
           {isWelcome && <button type="button" className="feature-skip" onClick={onDismiss}>Maybe later</button>}
         </div>
       </motion.section>
