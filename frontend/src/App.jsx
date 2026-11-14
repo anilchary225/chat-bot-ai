@@ -31,6 +31,11 @@ const PRODUCT_FEATURES = [
   { icon: Briefcase, title: "Resume ATS Match", text: "Check a resume against a job description or tailor it without one.", action: "Try resume tools", view: "resume" },
   { icon: Bot, title: "Website Agents", text: "Create a website assistant, add knowledge, and help answer visitor questions.", action: "Explore agents", view: "agents" },
 ];
+// Keep these specific to APP_VERSION; PRODUCT_FEATURES are for the first-use welcome only.
+const RELEASE_FEATURES = [
+  { icon: Briefcase, title: "Tailor without a job description", text: "Create a general resume draft using only the resume you provide.", action: "Try resume tools", view: "resume" },
+  { icon: Trash2, title: "Clear resume data", text: "Remove your uploaded or pasted resume and generated draft from the page when you're done.", action: "Open resume tools", view: "resume" },
+];
 
 function getInitialAnnouncement(user) {
   try {
@@ -233,14 +238,14 @@ function FeatureAnnouncement({ mode, onDismiss, onTry }) {
           <X size={19} />
         </button>
         <div className="feature-kicker"><Orb size={22} state="idle" /> {isWelcome ? "WELCOME TO ZENOXI" : `WHAT'S NEW · v${APP_VERSION}`}</div>
-        <h2 id="feature-dialog-title">{isWelcome ? "A little more room to think." : "Meet the tools inside Zenoxi."}</h2>
+        <h2 id="feature-dialog-title">{isWelcome ? "A little more room to think." : "Two new ways to work with your resume."}</h2>
         <p id="feature-dialog-description" className="feature-description">
           {isWelcome
             ? "Meet the tools that help you think, create, and move forward. Everything here is available to every Zenoxi user."
-            : `Try AI Chat, Resume ATS Match, or Website Agents. Resume tailoring without a job description is new in v${APP_VERSION}; all three features are available to everyone.`}
+            : `This version adds two resume actions: general tailoring without a job description and clearing resume data when you're done.`}
         </p>
         <div className={`feature-grid ${isWelcome ? "welcome-grid" : "release-grid"}`}>
-          {PRODUCT_FEATURES.map(({ icon: Icon, title, text, action, view }, index) => (
+          {(isWelcome ? PRODUCT_FEATURES : RELEASE_FEATURES).map(({ icon: Icon, title, text, action, view }, index) => (
             <motion.article
               className="feature-card"
               key={title}
@@ -259,7 +264,7 @@ function FeatureAnnouncement({ mode, onDismiss, onTry }) {
             </motion.article>
           ))}
         </div>
-        {!isWelcome && <div className="feature-free"><ShieldCheck size={15} /> Included for everyone</div>}
+        {!isWelcome && <div className="feature-free"><ShieldCheck size={15} /> Added in v{APP_VERSION} · Included for everyone</div>}
         <div className="feature-footer">
           <span>{isWelcome ? "Free for everyone · No setup needed" : `Zenoxi ${APP_VERSION}`}</span>
           {isWelcome && <button type="button" className="feature-skip" onClick={onDismiss}>Maybe later</button>}
