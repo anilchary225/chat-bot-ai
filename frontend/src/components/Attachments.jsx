@@ -1,5 +1,12 @@
 import { motion } from "framer-motion";
-import { AlertCircle, FileCode2, FileSpreadsheet, FileText, LoaderCircle, X } from "lucide-react";
+import {
+  AlertCircle,
+  FileCode2,
+  FileSpreadsheet,
+  LoaderCircle,
+  X,
+  FileText,
+} from "./DrawingIcons";
 
 export const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const TEXT_EXT = [

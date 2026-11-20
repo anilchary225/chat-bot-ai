@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { LoaderCircle, MessageCircle, Smartphone, X } from "lucide-react";
+import {
+  LoaderCircle,
+  Smartphone,
+  X,
+  MessageCircle,
+} from "./DrawingIcons";
 import { keyHeaders, saveKey } from "../chatKeys";
 
 function useCountdown(expiresAt) {

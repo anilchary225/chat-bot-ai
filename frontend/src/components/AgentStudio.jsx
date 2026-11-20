@@ -1,9 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowLeft, ArrowUp, BarChart3, Bot, Check, Code2, Copy, ExternalLink, FileText, Globe, HelpCircle, Inbox, LoaderCircle, Mail,
-  MessageSquareText, Palette, Plus, Rocket, Sparkles, StickyNote, Trash2, Upload, Wand2, X
-} from "lucide-react";
+  ArrowLeft,
+  ArrowUp,
+  BarChart3,
+  Check,
+  Code2,
+  Copy,
+  ExternalLink,
+  Globe,
+  HelpCircle,
+  Inbox,
+  LoaderCircle,
+  Mail,
+  MessageSquareText,
+  Palette,
+  Plus,
+  Rocket,
+  Sparkles,
+  StickyNote,
+  Trash2,
+  Upload,
+  Wand2,
+  X,
+  Bot,
+  FileText,
+} from "./DrawingIcons";
 import Orb from "./Orb";
 import Markdown from "./Markdown";
 import { AgentAvatar, AiKeyBox, AnalyticsTab, AvatarPicker, EmailsTab, InboxTab, LeadsTab } from "./AgentStudioExtra";

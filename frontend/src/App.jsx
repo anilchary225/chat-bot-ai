@@ -3,10 +3,40 @@ import {
   AnimatePresence, LayoutGroup, MotionConfig, motion, useMotionValue, useSpring
 } from "framer-motion";
 import {
-  Plus, MessageSquare, Trash2, ArrowUp, PanelLeftClose, PanelLeftOpen, LoaderCircle,
-  Copy, Check, AlertCircle, Menu, X, Sun, Moon, Search, Lightbulb, Code2, Rocket, PenLine, ArrowDown, Globe, Info, Paperclip, Upload, Briefcase, FileText, LogOut, Bot, ShieldCheck, Sparkles, ArrowRight
-} from "lucide-react";
+  Plus,
+  Trash2,
+  ArrowUp,
+  PanelLeftClose,
+  PanelLeftOpen,
+  LoaderCircle,
+  Copy,
+  Check,
+  AlertCircle,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  Search,
+  Lightbulb,
+  Code2,
+  Rocket,
+  PenLine,
+  ArrowDown,
+  Globe,
+  Info,
+  Paperclip,
+  Upload,
+  Briefcase,
+  LogOut,
+  ShieldCheck,
+  Sparkles,
+  ArrowRight,
+  MessageSquare,
+  FileText,
+  Bot,
+} from "./components/DrawingIcons";
 import Orb from "./components/Orb";
+import ZenoxiWordmark from "./components/ZenoxiWordmark";
 import Aurora from "./components/Aurora";
 import Markdown from "./components/Markdown";
 import Sources from "./components/Sources";
@@ -237,7 +267,9 @@ function FeatureAnnouncement({ mode, onDismiss, onTry }) {
         <button className="feature-close" type="button" aria-label="Close feature announcement" onClick={onDismiss} autoFocus>
           <X size={19} />
         </button>
-        <div className="feature-kicker"><Orb size={22} state="idle" /> {isWelcome ? "WELCOME TO ZENOXI" : `WHAT'S NEW · v${APP_VERSION}`}</div>
+        <div className="feature-kicker">
+          {isWelcome ? <>WELCOME TO <ZenoxiWordmark /></> : <><Orb size={22} state="idle" /> { `WHAT'S NEW · v${APP_VERSION}` }</>}
+        </div>
         <h2 id="feature-dialog-title">{isWelcome ? "A little more room to think." : "Two new ways to work with your resume."}</h2>
         <p id="feature-dialog-description" className="feature-description">
           {isWelcome
@@ -725,7 +757,7 @@ function App({ user, onSignOut }) {
           transition={spring}
         >
           <div className="brand">
-            <Orb size={40} state={orbState} />
+            {!expanded && <Orb size={40} state={orbState} />}
             <AnimatePresence initial={false}>
               {expanded && (
                 <motion.div
@@ -735,7 +767,7 @@ function App({ user, onSignOut }) {
                   exit={{ opacity: 0, x: -8 }}
                   transition={{ duration: 0.18 }}
                 >
-                  <strong>Zenoxi</strong>
+                  <strong><ZenoxiWordmark /></strong>
                   <span>your thinking partner</span>
                 </motion.div>
               )}

@@ -2,6 +2,30 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/ai-chat",
+      "destination": "/"
+    },
+    {
+      "source": "/website-agent",
+      "destination": "/"
+    },
+    {
+      "source": "/instagram",
+      "destination": "/"
+    },
+    {
+      "source": "/whatsapp",
+      "destination": "/"
+    },
+    {
+      "source": "/resume-tools",
+      "destination": "/"
+    },
+    {
+      "source": "/faq",
+      "destination": "/"
+    },
+    {
       "source": "/admin",
       "destination": "/"
     },

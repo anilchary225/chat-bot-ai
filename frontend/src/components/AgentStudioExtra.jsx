@@ -2,9 +2,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  BarChart3, Bot, Check, Download, FileSpreadsheet, HelpCircle, ImagePlus, Inbox, KeyRound, LoaderCircle, Mail,
-  MessageSquareText, Send, Sparkles, StickyNote, Trash2, TrendingUp, X, Zap
-} from "lucide-react";
+  BarChart3,
+  Check,
+  Download,
+  FileSpreadsheet,
+  HelpCircle,
+  ImagePlus,
+  Inbox,
+  KeyRound,
+  LoaderCircle,
+  Mail,
+  MessageSquareText,
+  Send,
+  Sparkles,
+  StickyNote,
+  Trash2,
+  TrendingUp,
+  X,
+  Zap,
+  Bot,
+} from "./DrawingIcons";
 import Markdown from "./Markdown";
 import Orb from "./Orb";
 

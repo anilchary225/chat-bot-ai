@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
-import { Globe } from "lucide-react";
+import {
+  Globe,
+} from "./DrawingIcons";
 
 /** Animated row of web sources used for an answer. */
 export default function Sources({ sources }) {

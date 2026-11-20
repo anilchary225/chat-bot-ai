@@ -2,9 +2,31 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  AlertTriangle, Ban, BarChart3, Bot, CheckCircle2, Clock, Inbox, KeyRound, LayoutDashboard, LoaderCircle, Mail,
-  MailWarning, MessageSquareText, Play, RefreshCw, Search, Server, ShieldCheck, Sparkles, Trash2, UserCheck, Users, X, XCircle,
-} from "lucide-react";
+  AlertTriangle,
+  Ban,
+  BarChart3,
+  CheckCircle2,
+  Clock,
+  Inbox,
+  KeyRound,
+  LayoutDashboard,
+  LoaderCircle,
+  Mail,
+  MailWarning,
+  MessageSquareText,
+  Play,
+  RefreshCw,
+  Search,
+  Server,
+  ShieldCheck,
+  Sparkles,
+  Trash2,
+  UserCheck,
+  Users,
+  X,
+  XCircle,
+  Bot,
+} from "./DrawingIcons";
 
 const spring = { type: "spring", stiffness: 340, damping: 30 };
 const TABS = [

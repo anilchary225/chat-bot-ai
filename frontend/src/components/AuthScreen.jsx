@@ -1,7 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, LoaderCircle, Mail, ShieldCheck, User } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  LoaderCircle,
+  Mail,
+  ShieldCheck,
+  User,
+} from "./DrawingIcons";
 import Orb from "./Orb";
+import ZenoxiWordmark from "./ZenoxiWordmark";
 import Aurora from "./Aurora";
 import GoogleButton, { googleEnabled } from "./GoogleButton";
 import { setToken } from "../auth";
@@ -82,6 +90,9 @@ export default function AuthScreen({ api, onSignedIn }) {
   const [error, setError] = useState("");
   const [shake, setShake] = useState(0);
   const [cooldown, setCooldown] = useState(0);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const termsAcceptedRef = useRef(false);
+  const termsId = useId();
 
   useEffect(() => {
     if (cooldown <= 0) return undefined;
@@ -91,9 +102,15 @@ export default function AuthScreen({ api, onSignedIn }) {
 
   const fail = (message) => { setError(message); setShake((n) => n + 1); };
 
+  function updateTerms(accepted) {
+    termsAcceptedRef.current = accepted;
+    setTermsAccepted(accepted);
+  }
+
   const requestCode = async (event) => {
     event?.preventDefault();
     if (busy) return;
+    if (!termsAcceptedRef.current) return fail("Accept the Terms of Service to continue.");
     setBusy(true);
     setError("");
     try {
@@ -105,8 +122,12 @@ export default function AuthScreen({ api, onSignedIn }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         const detail = typeof data.detail === "string" ? data.detail : "Enter a valid email address.";
-        if (res.status === 404) setMode("signup");
-        if (res.status === 409) setMode("signin");
+        const nextMode = res.status === 404 ? "signup" : res.status === 409 ? "signin" : mode;
+        if (nextMode !== mode) {
+          setMode(nextMode);
+          updateTerms(false);
+          setStep("email");
+        }
         throw new Error(detail);
       }
       setCode("");
@@ -121,6 +142,7 @@ export default function AuthScreen({ api, onSignedIn }) {
 
   const verify = async (value = code) => {
     if (busy || !/^\d{6}$/.test(value)) return;
+    if (!termsAcceptedRef.current) return fail("Accept the Terms of Service to continue.");
     setBusy(true);
     setError("");
     try {
@@ -141,9 +163,15 @@ export default function AuthScreen({ api, onSignedIn }) {
     }
   };
 
-  const switchMode = (next) => { setMode(next); setError(""); };
+  const switchMode = (next) => {
+    if (busy || next === mode) return;
+    setMode(next);
+    updateTerms(false);
+    setError("");
+  };
 
   const googleSignIn = async (credential) => {
+    if (busy || !termsAcceptedRef.current) return;
     setBusy(true);
     setError("");
     try {
@@ -174,7 +202,7 @@ export default function AuthScreen({ api, onSignedIn }) {
           transition={{ duration: 0.6 }}
         >
           <Orb size={120} track state={busy ? "thinking" : "idle"} />
-          <h1>Meet <span className="rt-grad">Zenoxi</span></h1>
+          <h1>Meet <ZenoxiWordmark className="auth-wordmark" /></h1>
           <p>One workspace for AI chat, resume tailoring, and helpful agents for your website.</p>
           <ul>
             {["AI chat on Zenoxi and Instagram, with /web to continue the same conversation here", "Resume ATS match and tailoring, with or without a job description", "Website agents that answer your visitors"].map((item, i) => (
@@ -201,20 +229,41 @@ export default function AuthScreen({ api, onSignedIn }) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="auth-tabs" role="tablist">
+                <div className="auth-tabs" role="tablist" aria-label="Account access" data-mode={mode}>
+                  <span className="auth-tab-bg" aria-hidden="true" />
                   {[["signin", "Sign in"], ["signup", "Sign up"]].map(([key, label]) => (
                     <button key={key} type="button" role="tab" aria-selected={mode === key} className={mode === key ? "on" : ""} onClick={() => switchMode(key)}>
-                      {mode === key && <motion.span layoutId="auth-tab" className="auth-tab-bg" transition={spring} />}
-                      <span>{label}</span>
+                      {label}
                     </button>
                   ))}
                 </div>
                 <h2>{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
                 <p className="auth-sub">{googleEnabled ? "Continue with Google, or get a 6-digit code by email." : "We'll email you a 6-digit code. No password needed."}</p>
 
+                <div className="auth-consent">
+                  <input
+                    id={termsId}
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(event) => updateTerms(event.target.checked)}
+                    disabled={busy}
+                    required
+                  />
+                  <div>
+                    <label htmlFor={termsId}>I agree to the Terms of Service.</label>{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer">Read the terms</a>
+                  </div>
+                </div>
+
                 {googleEnabled && (
                   <>
-                    <GoogleButton onCredential={googleSignIn} text={mode === "signup" ? "signup_with" : "continue_with"} />
+                    {termsAccepted && !busy ? (
+                      <GoogleButton onCredential={googleSignIn} text={mode === "signup" ? "signup_with" : "continue_with"} />
+                    ) : (
+                      <button type="button" className="auth-google-disabled" disabled>
+                        {mode === "signup" ? "Sign up with Google" : "Continue with Google"}
+                      </button>
+                    )}
                     <div className="auth-divider"><span>or use email</span></div>
                   </>
                 )}
@@ -234,7 +283,7 @@ export default function AuthScreen({ api, onSignedIn }) {
                 </AnimatePresence>
                 <label className="auth-field">
                   <span>Email</span>
-                  <div><Mail size={16} /><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required autoFocus /></div>
+                  <div><Mail size={16} /><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email" required /></div>
                 </label>
 
                 <AnimatePresence>
@@ -245,7 +294,7 @@ export default function AuthScreen({ api, onSignedIn }) {
                   )}
                 </AnimatePresence>
 
-                <motion.button className="auth-primary" type="submit" disabled={busy} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+                <motion.button className="auth-primary" type="submit" disabled={busy || !termsAccepted} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                   {busy ? <LoaderCircle size={17} className="spin" /> : <>Send code <ArrowRight size={17} /></>}
                 </motion.button>
                 <p className="auth-switch">

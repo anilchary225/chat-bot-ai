@@ -1,0 +1,44 @@
+.zenoxi-wordmark {
+  --wordmark-accent: #b53c1a;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.025em;
+  font-family: var(--font-display, inherit);
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.zenoxi-wordmark > span:first-child {
+  font-weight: 700;
+  letter-spacing: -0.065em;
+}
+
+.zenoxi-wordmark > span:last-child {
+  color: var(--wordmark-accent);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: -0.07em;
+  padding-inline-end: 0.055em;
+}
+
+:root[data-theme="dark"] .zenoxi-wordmark,
+.landing-footer .zenoxi-wordmark {
+  --wordmark-accent: #ff9e63;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .zenoxi-wordmark {
+    --wordmark-accent: #ff9e63;
+  }
+}
+
+.zenoxi-wordmark .zenoxi-wordmark-orb {
+  display: block;
+  align-self: center;
+  flex: none;
+  width: 1.9em;
+  height: auto;
+  margin: 0 -0.16em;
+  border-radius: 0;
+  transform: translateY(0.035em);
+}

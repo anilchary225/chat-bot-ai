@@ -1,9 +1,23 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from "framer-motion";
 import {
-  ArrowRight, Check, CheckCircle2, ClipboardPaste, Copy, Download, FileText, Lightbulb, Trash2,
-  LoaderCircle, RotateCcw, Sparkles, Target, Upload, X, XCircle
-} from "lucide-react";
+  ArrowRight,
+  Check,
+  CheckCircle2,
+  ClipboardPaste,
+  Copy,
+  Download,
+  Lightbulb,
+  Trash2,
+  LoaderCircle,
+  RotateCcw,
+  Sparkles,
+  Target,
+  Upload,
+  X,
+  XCircle,
+  FileText,
+} from "./DrawingIcons";
 import Orb from "./Orb";
 
 const RESUME_ACCEPT = ".pdf,.docx,.txt,.md";

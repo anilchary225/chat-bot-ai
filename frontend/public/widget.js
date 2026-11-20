@@ -10,6 +10,7 @@
   var script = document.currentScript || document.querySelector("script[data-agent]");
   if (!script) return;
   var KEY = script.getAttribute("data-agent");
+  var ORB_URL = new URL("./zenoxi-orb.svg", script.src || "https://zenoxi.vercel.app/widget.js").href;
   var API = (script.getAttribute("data-api") || "https://chat-bot-ai-ouc2.onrender.com").replace(/\/+$/, "");
   if (!KEY) { console.warn("[Zenoxi] Missing data-agent on the widget script."); return; }
 
@@ -161,7 +162,7 @@
 .inq{display:block;margin:0 0 8px;padding:6px 10px;border:1px dashed #f3c7a6;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12.5px;font-weight:600;cursor:pointer}\
 .row{display:flex;gap:8px;align-items:flex-end}.row textarea{flex:1;max-height:110px;min-height:42px;padding:10px 12px;border:1px solid #e3d7ca;border-radius:14px;font-size:14px;resize:none;outline:0;background:#fffdfa}.row textarea:focus{border-color:var(--c)}\
 .send{flex:none;width:42px;height:42px;border:0;border-radius:13px;background:var(--c);color:#fff;font-size:18px;cursor:pointer}.send:disabled{opacity:.45;cursor:default}\
-.by{margin-top:6px;text-align:center;font-size:11px;color:#a2978d}.by a{color:#9a3412;text-decoration:none;font-weight:600}\
+.by{margin-top:6px;text-align:center;font-size:11px;color:#a2978d}.by a{color:#9a3412;text-decoration:none;font-weight:600}.by .wordmark{display:inline-flex;align-items:baseline;gap:.025em;white-space:nowrap}.by .wordmark>span:first-child{font-weight:700;letter-spacing:-.065em}.by .wordmark>span:last-child{color:#b53c1a;font-weight:700;font-style:italic;letter-spacing:-.07em;padding-inline-end:.055em}.by .wordmark img{display:block;align-self:center;width:1.9em;height:auto;margin:0 -.16em;transform:translateY(.035em)}\
 .badge{margin-left:6px;padding:1px 7px;border-radius:8px;background:rgba(255,255,255,.25);font-size:10px;font-weight:700;letter-spacing:.4px}\
 @media (max-width:480px){.zx{bottom:14px;right:14px}.zx.left{left:14px}.panel{position:fixed;inset:0;width:auto;height:auto;bottom:0;border-radius:0}.launcher.close{display:none}}\
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}";
@@ -229,7 +230,15 @@
       h("div", { class: "foot" }, [
         form.enabled ? h("button", { class: "inq", type: "button", text: tr(form.button_label || "📩 Send an inquiry"), onclick: showForm }) : null,
         h("div", { class: "row" }, [input, sendBtn]),
-        h("div", { class: "by", html: 'Powered by <a href="https://zenoxi.vercel.app" target="_blank" rel="noopener">Zenoxi</a> · ' + esc(t("wrong")) }),
+        h("div", { class: "by" }, [
+          document.createTextNode("Powered by "),
+          h("a", { class: "wordmark", href: "https://zenoxi.vercel.app", target: "_blank", rel: "noopener", "aria-label": "Zenoxi" }, [
+            h("span", { text: "Zen" }),
+            h("img", { src: ORB_URL, width: "402", height: "236", alt: "" }),
+            h("span", { text: "xi" }),
+          ]),
+          document.createTextNode(" · " + t("wrong")),
+        ]),
       ]),
     ]);
     wrap.appendChild(panel);

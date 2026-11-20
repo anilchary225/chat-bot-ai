@@ -1,7 +1,10 @@
 import { memo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Check, Copy } from "lucide-react";
+import {
+  Check,
+  Copy,
+} from "./DrawingIcons";
 
 function CodeBlock({ node, children, ...props }) {
   const ref = useRef(null);
