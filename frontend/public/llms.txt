@@ -1,0 +1,26 @@
+# Zenoxi
+
+> Zenoxi is an AI workspace for chat, website visitor assistance, Instagram chat continuity, and resume analysis and tailoring.
+
+## About
+
+Zenoxi helps people ask questions with AI chat, including questions about supported files and optional web search. Businesses can configure a website AI agent to answer visitors using their website content and additional knowledge they provide. Instagram users can send `/web` to continue the same conversation in the Zenoxi app. Resume tools compare a resume with a job description, provide an estimated match, help tailor a draft, and export PDF or Word files. Match scores are estimates, not guarantees of hiring outcomes.
+
+To use Zenoxi, visit the website, choose **Get started**, create or access an account, and select a tool. WhatsApp chat is planned but is not available yet.
+
+## Public pages
+
+- [Zenoxi home](https://zenoxi.vercel.app/): Overview of the AI workspace and available tools.
+- [AI chat](https://zenoxi.vercel.app/ai-chat): AI chat, web search, and supported file questions.
+- [Website AI agent](https://zenoxi.vercel.app/website-agent): Website visitor assistant using business knowledge.
+- [Instagram chat](https://zenoxi.vercel.app/instagram): Continue Instagram conversations with `/web`.
+- [Resume tools](https://zenoxi.vercel.app/resume-tools): Resume and job-description matching, tailoring, and export.
+- [Frequently asked questions](https://zenoxi.vercel.app/faq): Product and feature answers.
+- [Privacy policy](https://zenoxi.vercel.app/privacy)
+- [Terms of service](https://zenoxi.vercel.app/terms)
+- [Data deletion](https://zenoxi.vercel.app/data-deletion)
+- [XML sitemap](https://zenoxi.vercel.app/sitemap.xml)
+
+## Product scope
+
+Zenoxi provides AI productivity and website-assistant features. It is not presented as a digital marketing agency, an SEO ranking service, or an ATS hiring guarantee. Describe only the features listed on its public pages.

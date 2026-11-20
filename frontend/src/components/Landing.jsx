@@ -63,12 +63,12 @@ const NAV_LINKS = [
 ];
 
 const PUBLIC_PAGES = {
-  "/ai-chat": { title: "AI chat for the things you’re working through", description: "Ask questions, explore ideas, search the web, and work with your documents in one conversation.", component: "chat" },
-  "/website-agent": { title: "A helpful assistant for every website visit", description: "Give visitors an AI assistant that answers from your website and the knowledge you provide.", component: "agents" },
-  "/instagram": { title: "Keep the conversation when you leave Instagram", description: "Chat with Zenoxi on Instagram, then send /web to continue the same conversation in the app.", component: "instagram" },
-  "/whatsapp": { title: "WhatsApp chat is coming soon", description: "A preview of WhatsApp chat for Zenoxi. Availability will be announced when the feature is ready.", component: "whatsapp" },
-  "/resume-tools": { title: "Make your next application clearer", description: "Review resume and job description alignment, tailor a draft, and export a clean PDF.", component: "resume" },
-  "/faq": { title: "Frequently asked questions", description: "Answers about Zenoxi AI chat, resume tools, website agents, and continuing Instagram chats in the app.", component: "faq" },
+  "/ai-chat": { title: "AI Chat Assistant for Questions, Web Search & Files", description: "Use Zenoxi AI chat to explore ideas, search the web, and ask questions about supported documents in one conversation.", keywords: "AI chat assistant, AI assistant for files, web search AI chat, online AI chat tool", component: "chat" },
+  "/website-agent": { title: "Website AI Agent for Visitor Questions", description: "Create a website AI assistant that answers visitor questions using your website content and business knowledge.", keywords: "website AI agent, AI website assistant for businesses, website chatbot for digital marketing teams, website customer support chatbot", component: "agents" },
+  "/instagram": { title: "Instagram AI Chat That Continues in Zenoxi", description: "Chat with Zenoxi on Instagram, then send /web to continue the same conversation in the Zenoxi app.", keywords: "Instagram AI chat, Instagram DM assistant, AI assistant for Instagram messages, continue Instagram chat on web", component: "instagram" },
+  "/whatsapp": { title: "WhatsApp Chat for Zenoxi — Coming Soon", description: "WhatsApp chat is planned for Zenoxi and is not available yet.", keywords: "Zenoxi WhatsApp chat, WhatsApp AI assistant coming soon", component: "whatsapp" },
+  "/resume-tools": { title: "Resume ATS Match Analysis & Tailoring Tools", description: "Review estimated resume and job-description alignment, tailor a draft using your experience, and export a clean PDF or Word document.", keywords: "resume ATS match checker, AI resume tailoring, resume and job description match, resume PDF export, resume analysis tool", component: "resume" },
+  "/faq": { title: "Zenoxi FAQ: AI Chat, Website Agents & Resume Tools", description: "Find answers about Zenoxi AI chat, website agents, Instagram chat continuity, and resume match and tailoring tools.", keywords: "Zenoxi FAQ, AI chat questions, website agent help, resume ATS tool FAQ", component: "faq" },
 };
 
 export function isPublicLandingPath(pathname) {
@@ -785,6 +785,7 @@ function Footer() {
             <a href="/privacy">Privacy Policy</a>
             <a href="/terms">Terms of Service</a>
             <a href="/data-deletion">Data Deletion</a>
+            <a href="/sitemap.xml">Sitemap</a>
           </div>
           <div className="footer-column">
             <strong>Connect</strong>
@@ -936,8 +937,8 @@ function FeatureDetails({ component }) {
 export default function Landing({ onSignIn }) {
   const page = PUBLIC_PAGES[window.location.pathname.replace(/\/$/, "")];
   useEffect(() => {
-    const title = page ? `${page.title} | Zenoxi` : "Zenoxi — AI Chat, Resume Tools & Website Agents";
-    const description = page?.description || "Explore Zenoxi: AI chat, resume ATS match analysis and tailoring, Instagram chat continuity, and website AI agents.";
+    const title = page ? `${page.title} | Zenoxi` : "Zenoxi — AI Chat, Website Agents & Resume Tools";
+    const description = page?.description || "Zenoxi brings AI chat, website AI agents, Instagram chat continuity, and resume match and tailoring tools together in one workspace.";
     document.title = title;
     document.documentElement.classList.add("has-landing-page");
     document.body.style.overflow = "auto";
@@ -947,10 +948,14 @@ export default function Landing({ onSignIn }) {
     if (ogTitle) ogTitle.setAttribute("content", title);
     const ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc) ogDesc.setAttribute("content", description);
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (metaKeywords) metaKeywords.setAttribute("content", page?.keywords || "AI tools for digital marketing teams, AI chat assistant, website AI agent, AI website assistant, Instagram AI chat, resume ATS match checker, AI resume tailoring, resume PDF export");
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (ogImage) ogImage.setAttribute("content", "https://zenoxi.vercel.app/zenoxi-logo.png");
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) canonical.setAttribute("href", `${window.location.origin}${window.location.pathname}`);
+    const ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute("content", `${window.location.origin}${window.location.pathname}`);
     return () => {
       document.documentElement.classList.remove("has-landing-page");
       document.body.style.overflow = "";

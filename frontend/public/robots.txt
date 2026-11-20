@@ -1,4 +1,12 @@
 User-agent: *
 Allow: /
 
+# Keep authenticated app views out of search results.
+Disallow: /admin$
+Disallow: /agents$
+Disallow: /resume$
+Disallow: /*?app=true
+Disallow: /*?signin=true
+Disallow: /*?signup=true
+
 Sitemap: https://zenoxi.vercel.app/sitemap.xml
