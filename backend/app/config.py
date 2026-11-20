@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     admin_emails: str | None = None
     agent_daily_messages: int = 100
     agent_daily_messages_own_key: int = 2000
+    site_assistant_enabled: bool = True
     agent_daily_emails: int = 50
     public_api_url: str = "https://chat-bot-ai-ouc2.onrender.com"
     cron_secret: str | None = None

@@ -30,6 +30,9 @@ from .config import settings
 from .db import get_db
 from .documents import MAX_UPLOAD_BYTES, DocumentError, extract_text, select_passages
 from .resume import parse_json
+from .site_assistant import (
+    SITE_ASSISTANT_ID, SITE_ASSISTANT_KEY, SITE_ASSISTANT_KNOWLEDGE_VERSION, SITE_ASSISTANT_SOURCES,
+)
 from .webreader import WebReadError, read_website
 
 logger = logging.getLogger("zenoxi.agents")
@@ -565,7 +568,10 @@ async def agent_reply_stream(agent: dict, message: str, history: list[dict], tra
             yield {"type": "final", "content": fast, "show_form": form_on and bool(INTENT_RE.search(message)),
                    "unknown": False, "free": True}
             return
-    sources = [s async for s in db.agent_sources.find({"agent_id": agent["_id"]}).sort("created_at", 1)]
+    if agent.get("public_key") == SITE_ASSISTANT_KEY:
+        sources = SITE_ASSISTANT_SOURCES
+    else:
+        sources = [s async for s in db.agent_sources.find({"agent_id": agent["_id"]}).sort("created_at", 1)]
     recent_user = " ".join(m["content"] for m in history[-2:] if m.get("role") == "user")
     budget = BROAD_BUDGET if BROAD_RE.search(message) else KNOWLEDGE_BUDGET
     knowledge = knowledge_context(sources, f"{recent_user} {message}", budget)
@@ -876,6 +882,31 @@ async def public_agent(public_key: str, origin: str | None) -> tuple[dict, bool]
     """The agent for a widget request, after status and Origin checks. Returns (agent, is_preview)."""
     if not re.fullmatch(r"agt_[A-Za-z0-9_-]{8,40}", public_key or ""):
         raise HTTPException(status_code=404, detail="Agent not found")
+    if public_key == SITE_ASSISTANT_KEY:
+        if not settings.site_assistant_enabled:
+            raise HTTPException(status_code=404, detail="Agent not found")
+        allowed_origins = {
+            settings.public_frontend_url.rstrip("/"),
+            settings.frontend_origin.rstrip("/"),
+            "http://127.0.0.1:5173",
+        }
+        if origin not in allowed_origins:
+            raise HTTPException(status_code=403, detail="This assistant only works on the Zenoxi website.")
+        widget = default_settings("Zenoxi Assistant", "Zenoxi")
+        widget.update({
+            "welcome_message": "Hi, I'm Zenoxi. Ask me about AI chat, resume tools, website agents, or using Zenoxi. Please leave private account or resume details out of this chat.",
+            "suggested_questions": ["What can Zenoxi do?", "How do I tailor my resume?", "How do I add a website agent?"],
+            "handoff_message": "I couldn't find that in Zenoxi's product guide. See https://zenoxi.vercel.app/faq or use the support email listed on the site.",
+            "form": {"enabled": False},
+        })
+        return {
+            "_id": SITE_ASSISTANT_ID,
+            "public_key": SITE_ASSISTANT_KEY,
+            "name": "Zenoxi Assistant",
+            "business_name": "Zenoxi",
+            "settings": widget,
+            "updated_at": SITE_ASSISTANT_KNOWLEDGE_VERSION,
+        }, False
     agent = await get_db().agents.find_one({"public_key": public_key})
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
@@ -945,8 +976,10 @@ async def widget_chat(public_key: str, payload: VisitorMessage, request: Request
     async def stream():
         yield ndjson({"type": "conversation", "conversation_id": str(conversation["_id"])})
         try:
-            async for event in agent_reply_stream(agent, text, [{"role": m["role"], "content": m["content"]} for m in history],
-                                                  track_unknown=not preview):
+            async for event in agent_reply_stream(
+                agent, text, [{"role": m["role"], "content": m["content"]} for m in history],
+                track_unknown=not preview and public_key != SITE_ASSISTANT_KEY,
+            ):
                 if event["type"] == "final":
                     await db.agent_messages.insert_one({"agent_id": agent["_id"], "conversation_id": conversation["_id"],
                                                         "role": "assistant", "content": event["content"], "created_at": now()})

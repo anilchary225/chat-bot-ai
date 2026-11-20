@@ -106,3 +106,9 @@ Vite reads these **at build time**: after changing them on Vercel, redeploy.
 
 The Render Blueprint declares every backend variable. Secrets use `sync: false`, so Render asks for their values and
 they never live in Git.
+
+## Zenoxi landing assistant
+
+The public landing pages use the built-in **Zenoxi Assistant**. It shares the Website Agents rate limits and model configuration. Its public knowledge is maintained in `backend/app/site_assistant_knowledge.md`; update that guide and deploy the backend when public features or policies change. Use visitor-facing information only.
+
+Set `SITE_ASSISTANT_ENABLED=false` to turn it off. The widget accepts requests from the configured frontend origins and does not offer an inquiry form.

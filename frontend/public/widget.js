@@ -4,15 +4,19 @@
  */
 (function () {
   "use strict";
-  if (window.__zenoxiAgentLoaded) return;
-  window.__zenoxiAgentLoaded = true;
-
   var script = document.currentScript || document.querySelector("script[data-agent]");
   if (!script) return;
+  var mount = script.getAttribute("data-mount") === "parent" ? script.parentElement : null;
+  if (!mount && window.__zenoxiAgentLoaded) return;
   var KEY = script.getAttribute("data-agent");
   var ORB_URL = new URL("./zenoxi-orb.svg", script.src || "https://zenoxi.vercel.app/widget.js").href;
   var API = (script.getAttribute("data-api") || "https://chat-bot-ai-ouc2.onrender.com").replace(/\/+$/, "");
   if (!KEY) { console.warn("[Zenoxi] Missing data-agent on the widget script."); return; }
+  if (!mount) window.__zenoxiAgentLoaded = true;
+
+  function pageUrl() {
+    return (mount ? location.origin + location.pathname : location.href).slice(0, 500);
+  }
 
   // ---------- storage (works even when the browser blocks storage) ----------
   function store(kind) {
@@ -294,7 +298,7 @@
     var answer = "";
     fetch(API + "/api/public/agents/" + encodeURIComponent(KEY) + "/chat", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visitor_id: visitorId, conversation_id: conversationId, message: text, page_url: location.href.slice(0, 500) }),
+      body: JSON.stringify({ visitor_id: visitorId, conversation_id: conversationId, message: text, page_url: pageUrl() }),
     }).then(function (res) {
       if (!res.ok) return res.json().catch(function () { return {}; }).then(function (d) { throw new Error(typeof d.detail === "string" ? d.detail : "Something went wrong. Please try again."); });
       var reader = res.body.getReader(), dec = new TextDecoder(), buf = "";
@@ -445,7 +449,7 @@
   function sendLead(values, consent, honeypot, documents, done) {
     fetch(API + "/api/public/agents/" + encodeURIComponent(KEY) + "/leads", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visitor_id: visitorId, conversation_id: conversationId, fields: values, consent: consent, website: honeypot, documents: documents || [], page_url: location.href.slice(0, 500) }),
+      body: JSON.stringify({ visitor_id: visitorId, conversation_id: conversationId, fields: values, consent: consent, website: honeypot, documents: documents || [], page_url: pageUrl() }),
     }).then(function (res) {
       return res.json().catch(function () { return {}; }).then(function (d) {
         if (res.ok) {
@@ -459,17 +463,18 @@
     }).catch(function () { done(false, t("offline")); });
   }
 
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && open) toggle(); });
+  (mount ? root : document).addEventListener("keydown", function (e) { if (e.key === "Escape" && open) toggle(); });
 
   // ---------- start ----------
   function start() {
     fetch(API + "/api/public/agents/" + encodeURIComponent(KEY) + "/config")
       .then(function (r) { return r.ok ? r.json() : r.json().then(function (d) { throw new Error(d.detail || r.status); }); })
       .then(function (cfg) {
+        if (mount && (!mount.isConnected || script.parentElement !== mount)) return;
         config = cfg;
         wrap.style.setProperty("--c", cfg.color || "#ff6a2b");
         if (cfg.position === "left") { wrap.classList.add("left"); host.style.right = "auto"; host.style.left = "0"; }
-        document.body.appendChild(host);
+        (mount || document.body).appendChild(host);
         renderLauncher();
       })
       .catch(function (err) { console.warn("[Zenoxi] Assistant not loaded:", err.message || err); });

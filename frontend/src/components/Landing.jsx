@@ -33,6 +33,7 @@ import {
   Paperclip,
 } from "./DrawingIcons";
 import Orb3D from "./Orb3D";
+import LandingAssistant from "./LandingAssistant";
 import ZenoxiWordmark from "./ZenoxiWordmark";
 import Aurora from "./Aurora";
 import ThemeToggle from "./ThemeToggle";
@@ -979,6 +980,7 @@ export default function Landing({ onSignIn }) {
         </>}
       </main>
       <Footer />
+      <LandingAssistant />
     </div>
   );
 }
