@@ -101,13 +101,14 @@ function Checks({ checks }) {
 }
 
 function dates(item) {
-  return item.start && item.end ? `${item.start} - ${item.end}` : item.start || item.end || "";
+  const clean = (value = "") => value.replace(/\s*[–—]\s*/g, " - ").trim().replace(/^(present|current|now)$/i, "Present");
+  const start = clean(item.start);
+  const end = clean(item.end);
+  return start && end ? `${start} - ${end}` : start || end;
 }
 
-const Sep = () => <span className="rp-sep">◇</span>;
-
 function joinWith(items, render = (x) => x) {
-  return items.flatMap((item, i) => (i ? [<Sep key={`s${i}`} />, <span key={i}>{render(item)}</span>] : [<span key={i}>{render(item)}</span>]));
+  return items.flatMap((item, i) => (i ? [<span key={`s${i}`} className="rp-sep"> | </span>, <span key={i}>{render(item)}</span>] : [<span key={i}>{render(item)}</span>]));
 }
 
 /** On-screen preview of the same one-page template the PDF/DOCX use. */
@@ -134,66 +135,22 @@ function ResumePaper({ resume, layout }) {
         {first.length > 0 && <p>{joinWith(first)}</p>}
         {second.length > 0 && <p className="rp-links">{joinWith(second, (v) => <a href={href(v)} target="_blank" rel="noopener noreferrer">{v}</a>)}</p>}
       </header>
-      {resume.summary && (<section><h3>{resume.summary_title || "Summary"}</h3><p className="rp-just">{resume.summary}</p></section>)}
-      {resume.education.length > 0 && (
-        <section>
-          <h3>Education</h3>
-          {resume.education.map((e, i) => (
-            <div key={i} className="rp-item">
-              <div className="rp-row"><span><strong>{e.degree}</strong>{e.school && `, ${e.school}`}{e.location && `, ${e.location}`}</span><span>{dates(e)}</span></div>
-              {e.score && <p className="rp-muted">{e.score}</p>}
-            </div>
-          ))}
-        </section>
-      )}
-      {resume.skills.length > 0 && (
-        <section>
-          <h3>Skills</h3>
-          <div className="rp-skills">
-            {resume.skills.map((g, i) => (
-              <div key={i}><strong>{g.group}</strong><span>{g.items.join(", ")}</span></div>
-            ))}
-          </div>
-        </section>
-      )}
-      {resume.experience.length > 0 && (
-        <section>
-          <h3>Experience</h3>
-          {resume.experience.map((job, i) => (
-            <div key={i} className="rp-item">
-              <div className="rp-row"><strong>{job.title}</strong><span>{dates(job)}</span></div>
-              {(job.company || job.location) && <div className="rp-row"><span>{job.company}</span><em>{job.location}</em></div>}
-              <ul>{job.bullets.map((b, j) => <li key={j}>{b}</li>)}</ul>
-            </div>
-          ))}
-        </section>
-      )}
-      {resume.projects.length > 0 && (
-        <section>
-          <h3>Projects</h3>
-          {resume.projects.map((p, i) => (
-            <p key={i} className="rp-item rp-just">
-              <strong>{p.name.replace(/\.$/, "")}.</strong>{" "}
-              {p.tech && <em>Tech: {p.tech}. </em>}{p.description}
-            </p>
-          ))}
-        </section>
-      )}
-      {resume.activities?.length > 0 && (
-        <section><h3>Extra-Curricular Activities</h3>
-          <ul>{resume.activities.map((a, i) => <li key={i}><strong>{a.title}</strong>{a.detail && ` — ${a.detail}`}</li>)}</ul>
-        </section>
-      )}
-      {resume.certifications.length > 0 && (
-        <section><h3>Certifications</h3>
-          <ul>{resume.certifications.map((c2, i) => <li key={i}><strong>{c2.name}</strong>{c2.issuer && ` — ${c2.issuer}`}</li>)}</ul>
-        </section>
-      )}
-      {resume.personal?.length > 0 && (
-        <section><h3>Personal</h3>
-          {resume.personal.map((p, i) => <p key={i}><strong>{p.label}:</strong> {p.value}</p>)}
-        </section>
-      )}
+      {(() => {
+        const blocks = {
+          summary: resume.summary && <section key="summary"><h3>{resume.candidate_type === "experienced" ? "Summary" : resume.summary_title || "Summary"}</h3><p className="rp-just">{resume.summary}</p></section>,
+          experience: resume.experience.length > 0 && <section key="experience"><h3>Experience</h3>{resume.experience.map((job, i) => <div key={i} className="rp-item"><div className="rp-row"><strong>{job.title}</strong><span>{dates(job)}</span></div>{(job.company || job.location) && <div className="rp-row"><span>{job.company}</span><em>{job.location}</em></div>}<ul>{job.bullets.map((b, j) => <li key={j}>{b}</li>)}</ul></div>)}</section>,
+          skills: resume.skills.length > 0 && <section key="skills"><h3>{resume.candidate_type === "experienced" ? "Technical Skills" : "Skills"}</h3><div className="rp-skills">{resume.skills.map((g, i) => <div key={i}><strong>{g.group}{g.group ? ":" : ""}</strong><span>{g.items.join(", ")}</span></div>)}</div></section>,
+          projects: resume.projects.length > 0 && <section key="projects"><h3>Projects</h3>{resume.projects.map((p, i) => <p key={i} className="rp-item rp-just"><strong>{p.name.replace(/\.$/, "")}.</strong>{" "}{p.tech && <em>Tech: {p.tech}. </em>}{p.description}</p>)}</section>,
+          education: resume.education.length > 0 && <section key="education"><h3>Education</h3>{resume.education.map((e, i) => <div key={i} className="rp-item"><div className="rp-row"><span><strong>{e.degree}</strong>{e.school && `, ${e.school}`}{e.location && `, ${e.location}`}</span><span>{dates(e)}</span></div>{e.score && <p className="rp-muted">{e.score}</p>}</div>)}</section>,
+          activities: resume.activities?.length > 0 && <section key="activities"><h3>Extra-Curricular Activities</h3><ul>{resume.activities.map((a, i) => <li key={i}><strong>{a.title}</strong>{a.detail && ` | ${a.detail}`}</li>)}</ul></section>,
+          certificates: resume.certifications.length > 0 && <section key="certificates"><h3>{resume.candidate_type === "experienced" ? "Certificates" : "Certifications"}</h3><ul>{resume.certifications.map((cert, i) => <li key={i}><strong>{cert.name}</strong>{cert.issuer && ` | ${cert.issuer}`}</li>)}</ul></section>,
+          personal: resume.personal?.length > 0 && <section key="personal"><h3>Personal</h3>{resume.personal.map((p, i) => <p key={i}><strong>{p.label}:</strong> {p.value}</p>)}</section>,
+        };
+        const order = resume.candidate_type === "experienced"
+          ? ["summary", "experience", "skills", "projects", "education", "certificates"]
+          : ["summary", "education", "skills", "experience", "projects", "activities", "certificates", "personal"];
+        return order.map((key) => blocks[key]);
+      })()}
     </motion.article>
   );
 }
@@ -203,6 +160,7 @@ export default function ResumeTool({ api }) {
   const [file, setFile] = useState(null);
   const [pasted, setPasted] = useState("");
   const [jd, setJd] = useState("");
+  const [candidateType, setCandidateType] = useState("fresher");
   const [stage, setStage] = useState("input"); // input | analyzing | analyzed | tailoring | done
   const [analysis, setAnalysis] = useState(null);
   const [resumeText, setResumeText] = useState("");
@@ -270,7 +228,7 @@ export default function ResumeTool({ api }) {
       const res = await fetch(`${api}/api/resume/tailor`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume_text: resumeText, job_description: jd.trim() })
+        body: JSON.stringify({ resume_text: resumeText, job_description: jd.trim(), candidate_type: candidateType })
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Couldn't generate the resume.");
@@ -290,6 +248,7 @@ export default function ResumeTool({ api }) {
     setResult(null);
     try {
       const form = new FormData();
+      form.append("candidate_type", candidateType);
       if (mode === "file") form.append("file", file);
       else form.append("resume_text", pasted.trim());
       const res = await fetch(`${api}/api/resume/tailor-general`, { method: "POST", body: form });
@@ -345,6 +304,16 @@ export default function ResumeTool({ api }) {
         <h1>Tailor your resume to <span className="rt-grad">any job</span></h1>
         <p>Tailor your resume to a specific job description or create a general ATS-friendly draft without one. Zenoxi keeps your experience grounded in the resume you provide.</p>
       </motion.div>
+
+      <div className="rt-candidate-type" role="group" aria-label="Resume format">
+        <span>Choose your profile</span>
+        <div className="rt-candidate-options">
+          {[['fresher', 'Fresher'], ['experienced', 'Experienced']].map(([value, label]) => (
+            <button key={value} type="button" aria-pressed={candidateType === value} className={candidateType === value ? 'selected' : ''} onClick={() => setCandidateType(value)}>{label}</button>
+          ))}
+        </div>
+        <small>{candidateType === 'fresher' ? 'Keeps the current fresher resume layout.' : 'Summary → Experience → Technical Skills → Projects → Education → Certificates.'}</small>
+      </div>
 
       <div className="rt-inputs">
         <motion.div className="rt-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>

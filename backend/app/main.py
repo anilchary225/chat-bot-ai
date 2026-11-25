@@ -7,6 +7,7 @@ import string
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
+from typing import Literal
 
 import httpx
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
@@ -316,6 +317,7 @@ async def send_message(chat_id: str, payload: SendMessageRequest, x_chat_key: st
 class TailorRequest(BaseModel):
     resume_text: str = Field(min_length=50, max_length=60000)
     job_description: str = Field(min_length=30, max_length=30000)
+    candidate_type: Literal["fresher", "experienced"] = "fresher"
 
 class DocxRequest(BaseModel):
     resume: dict
@@ -350,12 +352,12 @@ async def resume_analyze(
 @app.post("/api/resume/tailor")
 async def resume_tailor(payload: TailorRequest, user: dict = Depends(current_user)):
     before = resume_tool.analyze(payload.resume_text, payload.job_description)
-    messages = resume_tool.tailor_messages(payload.resume_text, payload.job_description, before)
+    messages = resume_tool.tailor_messages(payload.resume_text, payload.job_description, before, payload.candidate_type)
     last_error: Exception | None = None
     for _ in range(2):  # free models sometimes return broken JSON; retry once
         try:
             raw = await complete_chat(messages, temperature=0.3, max_tokens=4000)
-            tailored = resume_tool.clean_resume(resume_tool.parse_json(raw))
+            tailored = resume_tool.clean_resume(resume_tool.parse_json(raw), payload.candidate_type)
             if not (tailored["experience"] or tailored["education"] or tailored["skills"]):
                 raise ValueError("Model returned an empty resume")
             break
@@ -378,6 +380,7 @@ async def resume_tailor(payload: TailorRequest, user: dict = Depends(current_use
 async def resume_tailor_general(
     file: UploadFile | None = File(None),
     resume_text: str | None = Form(None, max_length=60000),
+    candidate_type: Literal["fresher", "experienced"] = Form("fresher"),
     user: dict = Depends(current_user),
 ):
     if file is not None:
@@ -395,12 +398,12 @@ async def resume_tailor_general(
         raise HTTPException(status_code=422, detail="Add your resume as a file or paste at least a few lines of it.")
     source_text = re.sub(r"^\[Page \d+\]\n", "", source_text, flags=re.M)
 
-    messages = resume_tool.general_tailor_messages(source_text)
+    messages = resume_tool.general_tailor_messages(source_text, candidate_type)
     last_error: Exception | None = None
     for _ in range(2):  # retry once if a free model returns malformed JSON
         try:
             raw = await complete_chat(messages, temperature=0.3, max_tokens=4000)
-            tailored = resume_tool.clean_resume(resume_tool.parse_json(raw))
+            tailored = resume_tool.clean_resume(resume_tool.parse_json(raw), candidate_type)
             if not (tailored["experience"] or tailored["education"] or tailored["skills"]):
                 raise ValueError("Model returned an empty resume")
             break
